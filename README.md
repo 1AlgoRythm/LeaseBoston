@@ -1,20 +1,19 @@
-# LeaseBoston: a Snugd MCP MVP
+# LeaseBoston: apartment search inside Claude
 
 A renter finds an apartment **inside Claude or ChatGPT**, and asks the landlord
 questions there too. The landlord's own premade answer comes back instantly. If
 there isn't one, the question goes to the landlord's queue (only if the renter
-says yes), and the landlord's reply reaches the renter by email, SMS, the Snugd
-app, or right in the chat.
+says yes), and the landlord's reply reaches the renter by email, SMS, the
+LeaseBoston app, or right in the chat.
 
-It follows the same pattern as [Within](https://getwith.in): the AI never
-guesses the vendor's answer. It returns the vendor's saved text, or hands the
-question to a person.
+The AI never guesses a landlord's answer. It returns the landlord's saved text,
+or hands the question to the landlord.
 
 > **All data is synthetic.** Twenty made-up listings from six made-up landlords
 > in real Boston neighbourhoods. Coordinates for neighbourhoods and landmarks
 > come from Apple Maps. Every price, policy and answer is invented.
 
-**Demo video:** [`docs/snugd-demo.mp4`](docs/snugd-demo.mp4) (3 min 47 s). It is recorded live in Claude Desktop on a Mac and
+**Demo video:** [`docs/demo.mp4`](docs/demo.mp4) (3 min 47 s). It is recorded live in Claude Desktop on a Mac and
 driven by [agent-desktop](https://github.com/vercel-labs/agent-desktop). Seven scenes: search, a saved answer, sending a
 question, declining to send, the landlord replying, the renter seeing the reply, and the next renter getting the new answer
 instantly.
@@ -23,13 +22,22 @@ instantly.
 |---|---|
 | ![Listing carousel](docs/chat-card-carousel.png) ![Answer cards](docs/chat-card-answers.png) | ![Landlord inbox](docs/landlord-page.png) |
 
-The styling copies Snugd's own design tokens, measured from snugd.ai on 2026-11-22: green `#2D6A4F`, page `#FAFAF8`,
-card border `#E8E5E0`, 16 px card radius and 12 px button radius.
+**How it works, part by part:** [`docs/architecture/`](docs/architecture/README.md). There is an overview diagram,
+8 sub-diagrams for the big parts, and a hand-drawn animation for every smallest piece. Each part is explained with
+links to the exact lines of code. The same diagrams are clickable on
+[satyaasudarshan.me](https://satyaasudarshan.me/#leaseboston).
+
+| Folder | What is in it |
+|---|---|
+| `leaseapp/` | The MCP server, the in-chat card (`ui/app.html`), the landlord inbox, and the rules (`service.py`) |
+| `tests/` | 29 tests, plus `mutation_check.py`, which breaks each safety guard on purpose and expects a test to fail |
+| `demo/` | The scripts that drove Claude Desktop and recorded the demo video |
+| `docs/` | The video, screenshots, and the architecture diagrams with their explanations |
 
 ## The two parts
 
 ```
- RENTER (in Claude / ChatGPT)                         LANDLORD (vendor end)
+ RENTER (in Claude / ChatGPT)                         LANDLORD (inbox)      
  ───────────────────────────                          ─────────────────────
  "2BR near Northeastern, cat, $3000"
         │
@@ -61,14 +69,14 @@ card border `#E8E5E0`, 16 px card radius and 12 px button radius.
 
 | Tool | Layer | What it does |
 |---|---|---|
-| `search_apartments` | Snugd's own feature | Hard filters (budget, beds, pets, move-in date, must-haves, areas), then a 0-100 fit score from budget room, distance to where they commute, and nice-to-haves. Every result says *why* it fits. If few fit, it lists near-misses and the one filter that ruled each out. |
-| `get_apartment` | Snugd's own feature | Full listing details. |
-| `ask_landlord` | Within-style layer | Returns the landlord's **saved answer** if one fits, otherwise `not_answered` plus a reference code. Every question is logged for the landlord either way. |
-| `send_question_to_landlord` | Within-style layer | Queues the question and notifies the landlord. The server instructions say to call it only after the renter says yes. Calling it twice never sends twice. |
-| `check_landlord_reply` | Within-style layer | The landlord's reply, by reference code. |
+| `search_apartments` | Search | Hard filters (budget, beds, pets, move-in date, must-haves, areas), then a 0-100 fit score from budget room, distance to where they commute, and nice-to-haves. Every result says *why* it fits. If few fit, it lists near-misses and the one filter that ruled each out. |
+| `get_apartment` | Search | Full listing details. |
+| `ask_landlord` | Landlord layer | Returns the landlord's **saved answer** if one fits, otherwise `not_answered` plus a reference code. Every question is logged for the landlord either way. |
+| `send_question_to_landlord` | Landlord layer | Queues the question and notifies the landlord. The server instructions say to call it only after the renter says yes. Calling it twice never sends twice. |
+| `check_landlord_reply` | Landlord layer | The landlord's reply, by reference code. |
 
 **In-chat cards (MCP App, `leaseapp/ui/app.html`).** `search_apartments` and `ask_landlord` are bound to one
-`ui://snugd/card.html` resource, and Claude Desktop draws it in the chat. It has three views:
+`ui://leaseboston/card.html` resource, and Claude Desktop draws it in the chat. It has three views:
 
 - **Listing carousel.** Each tile has an **Ask landlord** box, which puts the question in the renter's message box for
   them to send.
@@ -107,10 +115,10 @@ uv run pytest -q                         # 29 tests
 ### In Claude Code
 
 ```bash
-claude mcp add snugd -- uv --directory /ABSOLUTE/PATH/TO/LeaseBoston run python -m leaseapp stdio
+claude mcp add leaseboston -- uv --directory /ABSOLUTE/PATH/TO/LeaseBoston run python -m leaseapp stdio
 ```
 
-Or over HTTP while `serve` is running: `claude mcp add --transport http snugd http://127.0.0.1:8000/mcp`.
+Or over HTTP while `serve` is running: `claude mcp add --transport http leaseboston http://127.0.0.1:8000/mcp`.
 
 ### In Claude Desktop
 
@@ -122,7 +130,7 @@ From the official guide ([Connect to local MCP servers](https://modelcontextprot
    ```json
    {
      "mcpServers": {
-       "snugd": {
+       "leaseboston": {
          "command": "uv",
          "args": ["--directory", "/ABSOLUTE/PATH/TO/LeaseBoston", "run", "python", "-m", "leaseapp", "stdio"]
        }
@@ -189,7 +197,7 @@ When unsure, it fails safe. A missed match sends the question to the landlord, n
   - The full journey over **stdio** and over **HTTP**: search → saved answer → unanswered → send → landlord replies through the real form → renter sees the reply → the next renter gets it instantly.
   - The landlord page refuses non-localhost hosts.
   - `/mcp` accepts the tunnel host and rejects others.
-- **Mutation checks.** Each of five guards was broken on purpose (topic-word rule, localhost-only page, send-once, save-reply-as-answer, landlord ownership), and a test failed every time.
+- **Mutation checks** (`uv run python tests/mutation_check.py`). Each of five guards was broken on purpose (topic-word rule, localhost-only page, send-once, save-reply-as-answer, landlord ownership), and a test failed every time.
 - **Real Claude (Haiku 5.5, Claude Code headless), 5 sessions, checked against the database.** The first four ran over stdio:
   - Search → ask → not answered → sent with the renter's consent. The landlord was notified and the renter got a confirmation.
   - Parking and deposit questions were answered with the landlord's saved text, word for word.

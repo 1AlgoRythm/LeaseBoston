@@ -19,38 +19,3 @@ def ref(role, name, app="Claude"):
 
 if __name__ == "__main__":
     print(json.dumps(run(*sys.argv[1:]), indent=1)[:3000])
-
-
-
-import time
-
-def buttons(*names):
-    """Return {name: ref} for the first match of each button name that is present."""
-    out = {}
-    for n in names:
-        r = ref("button", n)
-        if r: out[n] = r
-    return out
-
-def send(prompt):
-    box = ref("textfield", "Write your prompt to Claude") or ref("textfield", "Write a message")
-    t = run("type", box, prompt, headed=True)
-    run("press", "return", "--app", "Claude", headed=True)
-    return t.get("ok")
-
-def wait_done(approve="Allow once", timeout=180, log=print):
-    """Click approval buttons as they appear; return when Claude stops generating."""
-    t0, idle, seen_busy = time.time(), 0, False
-    while time.time() - t0 < timeout:
-        time.sleep(2)
-        b = buttons(approve)
-        if b:
-            run("click", b[approve]); log(f"  approved at {round(time.time()-t0)}s"); idle = 0; continue
-        d = run("find", "--app", "Claude", "--role", "button", "--name", "Stop")
-        busy = bool(d.get("ok") and d["data"].get("total_matches"))  # ok is true even with 0 matches
-        seen_busy |= busy
-        idle = 0 if busy else idle + 1
-        if idle >= 2 and (seen_busy or time.time() - t0 > 15):
-            log(f"  saw busy: {seen_busy}")
-            return round(time.time() - t0)
-    return None

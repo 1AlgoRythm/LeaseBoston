@@ -107,7 +107,7 @@ def main():
     # reload both sides with the new design: the landlord server and Claude Desktop (which restarts the stdio server)
     subprocess.run(["pkill", "-f", "leaseapp serve --port 8000"])
     subprocess.Popen(f"cd '{REPO}' && exec uv run python -m leaseapp serve --port 8000"
-                     " > /tmp/snugd-serve-8000.log 2>&1", shell=True, start_new_session=True)
+                     " > /tmp/leaseboston-serve-8000.log 2>&1", shell=True, start_new_session=True)
     subprocess.run(["osascript", "-e", 'tell application "Claude" to quit'])
     for _ in range(40):
         if subprocess.run(["pgrep", "-x", "Claude"], capture_output=True).returncode: break
