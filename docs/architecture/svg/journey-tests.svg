@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="One journey function runs twice against a real server process, once over stdio and once over HTTP, through the same steps">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+<marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#8a8f98" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="20" y="110" width="110" height="80" rx="12"/>
+<rect x="330" y="45" width="130" height="60" rx="12"/>
+<rect x="330" y="195" width="130" height="60" rx="12"/>
+<path d="M132,135 Q230,75 322,75" marker-end="url(#ah)"/>
+<path d="M132,165 Q230,225 322,225" marker-end="url(#ah)"/>
+</g>
+<text x="32" y="156">journey()</text>
+<text x="370" y="82">stdio</text>
+<text x="371" y="232">HTTP</text>
+<text x="180" y="156">same steps</text>
+<text x="330" y="282" style="fill:#3b82f6">landlord form</text>
+<circle r="6" fill="#f97316" opacity="1"><animateMotion dur="6s" repeatCount="indefinite" path="M132,135 Q230,75 322,75" keyPoints="0;1;0;0" keyTimes="0;0.22;0.44;1" calcMode="linear"/><animate attributeName="opacity" dur="6s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.44;0.45;1"/></circle>
+<circle r="6" fill="#3b82f6" opacity="0"><animateMotion dur="6s" repeatCount="indefinite" path="M132,165 Q230,225 322,225" keyPoints="0;0;1;0;0" keyTimes="0;0.5;0.72;0.94;1" calcMode="linear"/><animate attributeName="opacity" dur="6s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.5;0.51;0.94;0.95;1"/></circle>
+</svg>

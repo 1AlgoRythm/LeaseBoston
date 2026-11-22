@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="Synthetic seed data: 6 landlords, 20 listings and 23 saved answers; a question with no saved answer hits a gap, and example.com addresses can never receive mail">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="40" cy="50" r="10"/><circle cx="90" cy="50" r="10"/><circle cx="140" cy="50" r="10"/><circle cx="190" cy="50" r="10"/><circle cx="240" cy="50" r="10"/><circle cx="290" cy="50" r="10"/>
+<path d="M30,104 h12 v12 h-12 z M45,104 h12 v12 h-12 z M60,104 h12 v12 h-12 z M75,104 h12 v12 h-12 z M90,104 h12 v12 h-12 z M105,104 h12 v12 h-12 z M120,104 h12 v12 h-12 z M135,104 h12 v12 h-12 z M150,104 h12 v12 h-12 z M165,104 h12 v12 h-12 z M180,104 h12 v12 h-12 z M195,104 h12 v12 h-12 z M210,104 h12 v12 h-12 z M225,104 h12 v12 h-12 z M240,104 h12 v12 h-12 z M255,104 h12 v12 h-12 z M270,104 h12 v12 h-12 z M285,104 h12 v12 h-12 z M300,104 h12 v12 h-12 z M315,104 h12 v12 h-12 z" stroke-width="2"/>
+<path d="M36,170 h1 M49,170 h1 M62,170 h1 M75,170 h1 M88,170 h1 M101,170 h1 M114,170 h1 M127,170 h1 M140,170 h1 M153,170 h1 M166,170 h1 M179,170 h1 M192,170 h1 M205,170 h1 M218,170 h1 M231,170 h1 M244,170 h1 M257,170 h1 M270,170 h1 M283,170 h1 M296,170 h1 M309,170 h1 M322,170 h1" stroke-width="9"/>
+<circle cx="60" cy="240" r="13" stroke-dasharray="4 5"/>
+<path d="M80,240 L285,240" stroke-dasharray="3 8" stroke="#3b82f6"/>
+<rect x="290" y="224" width="50" height="34" rx="3"/>
+<path d="M290,226 L315,244 L340,226"/>
+</g>
+<path d="M342,228 L362,254 M362,228 L342,254" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round" opacity="0"><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0" keyTimes="0;0.8;0.81;0.97;1"/></path>
+<circle r="6" fill="#f97316" stroke="none"><animateMotion dur="8s" repeatCount="indefinite" path="M40,62 L37,104 L36,170 L60,227" keyPoints="0;1;1" keyTimes="0;0.4;1" calcMode="linear"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.4;0.42;1"/></circle>
+<circle r="6" fill="#3b82f6" stroke="none" opacity="0"><animateMotion dur="8s" repeatCount="indefinite" path="M80,240 L285,240" keyPoints="0;0;1;1" keyTimes="0;0.42;0.8;1" calcMode="linear"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;0.42;0.44;0.79;0.8;1"/></circle>
+<text x="335" y="56">6 landlords</text>
+<text x="345" y="120">20 listings</text>
+<text x="345" y="176">23 answers</text>
+<text x="46" y="280">gap</text>
+<text x="290" y="282">example.com</text>
+</svg>

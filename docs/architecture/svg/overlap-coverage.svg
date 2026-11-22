@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="A short question whose one word is fully covered by a longer saved question: overlap 0.36, coverage 1.0, score 0.68">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="140" cy="160" r="88" stroke="#3b82f6"/>
+<circle cx="140" cy="190" r="32" stroke="#f97316"><animate attributeName="r" dur="8s" repeatCount="indefinite" keyTimes="0;0.5;0.6;0.7;1" values="32;32;36;32;32"/></circle>
+<circle cx="95" cy="140" r="5" stroke-width="2"/><circle cx="185" cy="135" r="5" stroke-width="2"/>
+</g>
+<text x="68" y="42">saved question</text>
+<text x="118" y="196" style="fill:#f97316">park</text>
+<text x="300" y="110" style="fill:#8a8f98" opacity="0"><animate attributeName="opacity" dur="8s" repeatCount="indefinite" keyTimes="0;0.15;0.19;0.94;1" values="0;0;1;1;0"/>overlap 0.36</text>
+<text x="300" y="170" style="fill:#8a8f98" opacity="0"><animate attributeName="opacity" dur="8s" repeatCount="indefinite" keyTimes="0;0.3;0.34;0.94;1" values="0;0;1;1;0"/>coverage 1.0</text>
+<text x="300" y="240" style="fill:#f97316" opacity="0"><animate attributeName="opacity" dur="8s" repeatCount="indefinite" keyTimes="0;0.5;0.54;0.94;1" values="0;0;1;1;0"/>score 0.68</text>
+</svg>

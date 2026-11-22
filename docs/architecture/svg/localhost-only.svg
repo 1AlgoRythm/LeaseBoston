@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="A request with Host localhost passes the gate to the landlord page; a request with any other Host is stopped with a 403">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="322" y="50" width="130" height="200" rx="12"/>
+<path d="M338,160 L436,160 M338,185 L420,185 M338,210 L436,210" stroke-width="1.5" stroke-dasharray="2 8"/>
+<path d="M310,50 L310,106 M310,154 L310,250"/>
+<path d="M100,130 L316,130" stroke-width="1.5" stroke-dasharray="2 8"/>
+<path d="M100,210 L262,210" stroke-width="1.5" stroke-dasharray="2 8"/>
+<path d="M280,198 L298,222 M298,198 L280,222" stroke="#ef4444" stroke-width="3.5" opacity="0"><animate attributeName="opacity" dur="6s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.5;0.92" values="0;1;0"/></path>
+</g>
+<circle cy="130" r="6" fill="#f97316" stroke="none"><animate attributeName="cx" dur="6s" repeatCount="indefinite" keyTimes="0;0.4;0.92;1" values="100;385;385;100"/><animate attributeName="opacity" dur="6s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.92" values="1;0"/></circle>
+<circle cy="210" r="6" fill="#3b82f6" stroke="none"><animate attributeName="cx" dur="6s" repeatCount="indefinite" keyTimes="0;0.5;0.92;1" values="100;262;262;100"/><animate attributeName="opacity" dur="6s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.92" values="1;0"/></circle>
+<text x="20" y="116">localhost</text>
+<text x="20" y="196">other host</text>
+<text x="338" y="80">landlord</text><text x="338" y="102">page</text>
+<text x="240" y="248" style="fill:#ef4444" opacity="0">403<animate attributeName="opacity" dur="6s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.5;0.92" values="0;1;0"/></text>
+</svg>

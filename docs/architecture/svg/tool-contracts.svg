@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="Typed tool inputs become a JSON Schema the model reads; a value outside the allowed list, such as a bird, is refused">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+<marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#f97316" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="20" y="40" width="190" height="110" rx="8"/>
+<rect x="330" y="40" width="130" height="110" rx="8"/>
+<path d="M210,95 L322,95" stroke="#f97316" marker-end="url(#ah)"/>
+<path d="M348,75 L440,75 M348,105 L420,105 M348,135 L400,135" stroke-width="2"/>
+<path d="M330,195 L330,275" stroke-width="3"/>
+<path d="M60,235 L300,235" stroke-width="1.5" stroke-dasharray="2 8"/>
+<path d="M300,220 L316,250 M316,220 L300,250" stroke="#ef4444" stroke-width="3.5" opacity="0"><animate attributeName="opacity" dur="6s" repeatCount="indefinite" keyTimes="0;0.45;0.5;0.95;1" values="0;0;1;1;0"/></path>
+</g>
+<circle r="6" fill="#f97316"><animateMotion dur="3s" repeatCount="indefinite" path="M210,95 L322,95"/></circle>
+<circle r="7" fill="#ef4444"><animateMotion dur="6s" repeatCount="indefinite" keyPoints="0;1;0;0" keyTimes="0;0.45;0.8;1" calcMode="linear" path="M70,235 L290,235"/></circle>
+<text x="32" y="75">min_beds 0-6</text>
+<text x="32" y="105">pets none|cat|dog</text>
+<text x="32" y="135">limit 1-10</text>
+<text x="222" y="82">JSON Schema</text>
+<text x="20" y="278" style="fill:#ef4444">bird</text>
+</svg>

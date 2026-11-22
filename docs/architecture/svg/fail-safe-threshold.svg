@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="A score on a 0 to 1 line: below 0.25 or up to 0.5 the question goes to the landlord, 0.25 up shows a related answer, 0.5 and up answers">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60,150 L440,150"/>
+<path d="M155,138 L155,162 M250,138 L250,162" stroke-width="3"/>
+<path d="M62,125 L62,115 L248,115 L248,125" stroke-width="2"/>
+<path d="M252,125 L252,115 L438,115 L438,125" stroke="#f97316" stroke-width="2"/>
+<path d="M158,192 L158,200 L247,200 L247,192" stroke="#3b82f6" stroke-width="2"/>
+</g>
+<circle r="9" fill="#f97316" stroke="none" cx="98" cy="150"><animate attributeName="cx" dur="8s" repeatCount="indefinite" keyTimes="0;0.2;0.35;0.5;0.65;0.9;1" values="98;98;193;193;364;364;98"/></circle>
+<text x="104" y="102">ask landlord</text>
+<text x="325" y="102" style="fill:#f97316">answer</text>
+<text x="138" y="182">0.25</text>
+<text x="237" y="182">0.5</text>
+<text x="172" y="224" style="fill:#3b82f6">related</text>
+</svg>

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="Four tiles count waiting, auto-answered and not-sent questions, and search views: one view for each of the landlord's units shown in a search">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="18" y="40" width="98" height="86" rx="12"/>
+<rect x="130" y="40" width="98" height="86" rx="12"/>
+<rect x="242" y="40" width="98" height="86" rx="12"/>
+<rect x="354" y="40" width="98" height="86" rx="12"/>
+</g>
+<text x="30" y="112">waiting</text>
+<text x="142" y="112">auto</text>
+<text x="254" y="112">not sent</text>
+<text x="366" y="112">views</text>
+<text x="30" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">0<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.15;0.93" values="1;0;1"/></text>
+<text x="30" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">1<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.15;0.3" values="0;1;0"/></text>
+<text x="30" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">2<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.3;0.93" values="0;1;0"/></text>
+<text x="142" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">0<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.45;0.93" values="1;0;1"/></text>
+<text x="142" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">1<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.45;0.93" values="0;1;0"/></text>
+<text x="254" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">0<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.58;0.93" values="1;0;1"/></text>
+<text x="254" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">1<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.58;0.93" values="0;1;0"/></text>
+<text x="366" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">0<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.72;0.93" values="1;0;1"/></text>
+<text x="366" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">1<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.72;0.79" values="0;1;0"/></text>
+<text x="366" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">2<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.79;0.86" values="0;1;0"/></text>
+<text x="366" y="82" style="font-size:30px;fill:#8a8f98" opacity="0">3<animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.86;0.93" values="0;1;0"/></text>
+<circle cx="67" r="7" fill="#f97316" stroke="none" opacity="0"><animate attributeName="cy" dur="8s" repeatCount="indefinite" keyTimes="0;0.03;0.15;1" values="200;200;132;132"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.03;0.15" values="0;1;0"/></circle>
+<circle cx="67" r="7" fill="#f97316" stroke="none" opacity="0"><animate attributeName="cy" dur="8s" repeatCount="indefinite" keyTimes="0;0.18;0.3;1" values="200;200;132;132"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.18;0.3" values="0;1;0"/></circle>
+<circle cx="179" r="7" fill="#3b82f6" stroke="none" opacity="0"><animate attributeName="cy" dur="8s" repeatCount="indefinite" keyTimes="0;0.33;0.45;1" values="200;200;132;132"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.33;0.45" values="0;1;0"/></circle>
+<circle cx="291" r="7" fill="#8a8f98" stroke="none" opacity="0"><animate attributeName="cy" dur="8s" repeatCount="indefinite" keyTimes="0;0.46;0.58;1" values="200;200;132;132"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.46;0.58" values="0;1;0"/></circle>
+<circle cx="378" r="7" fill="none" stroke="#8a8f98" stroke-width="2.5" opacity="0"><animate attributeName="cy" dur="8s" repeatCount="indefinite" keyTimes="0;0.6;0.72;1" values="200;200;132;132"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.6;0.72" values="0;1;0"/></circle>
+<circle cx="403" r="7" fill="none" stroke="#8a8f98" stroke-width="2.5" opacity="0"><animate attributeName="cy" dur="8s" repeatCount="indefinite" keyTimes="0;0.67;0.79;1" values="200;200;132;132"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.67;0.79" values="0;1;0"/></circle>
+<circle cx="428" r="7" fill="none" stroke="#8a8f98" stroke-width="2.5" opacity="0"><animate attributeName="cy" dur="8s" repeatCount="indefinite" keyTimes="0;0.74;0.86;1" values="200;200;132;132"/><animate attributeName="opacity" dur="8s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.74;0.86" values="0;1;0"/></circle>
+<text x="458" y="262" text-anchor="end">one per unit shown</text>
+</svg>

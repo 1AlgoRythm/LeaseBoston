@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="Claude talks to the server over stdio; ChatGPT talks over HTTP at /mcp with plain JSON because SSE streams do not pass a Cloudflare quick tunnel">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="20" y="45" width="110" height="50" rx="8"/>
+<rect x="20" y="175" width="110" height="50" rx="8"/>
+<rect x="340" y="55" width="120" height="180" rx="10"/>
+<path d="M130,70 L340,70" stroke="#f97316"/>
+<path d="M130,200 L340,200" stroke="#3b82f6"/>
+<path d="M140,252 q22,-14 45,0 t45,0 t45,0 t45,0" stroke-dasharray="3 7" stroke-width="2"/>
+<path d="M220,242 L236,258 M236,242 L220,258" stroke="#ef4444" stroke-width="3.5"><animate attributeName="opacity" dur="5s" repeatCount="indefinite" values="0.3;1;0.3"/></path>
+</g>
+<circle r="6" fill="#f97316"><animateMotion dur="5s" repeatCount="indefinite" path="M130,70 L340,70"/></circle>
+<circle r="6" fill="#3b82f6" opacity="0"><set attributeName="opacity" to="1" begin="1.5s"/><animateMotion dur="5s" repeatCount="indefinite" begin="1.5s" path="M130,200 L340,200"/></circle>
+<text x="40" y="76">Claude</text>
+<text x="33" y="206">ChatGPT</text>
+<text x="205" y="56">stdio</text>
+<text x="175" y="186">HTTP /mcp</text>
+<text x="376" y="150">server</text>
+<text x="200" y="284">SSE</text>
+</svg>

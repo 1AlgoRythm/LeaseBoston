@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="The landlord adds a question and answer for all units or one unit; the new answer lands at the top of the saved list, tagged seed, landlord or from reply, above a table of search views and questions per unit">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="20" y="25" width="130" height="38" rx="10"/><rect x="158" y="25" width="140" height="38" rx="10"/><rect x="306" y="25" width="96" height="38" rx="10"/>
+<circle cx="436" cy="44" r="19" stroke="#f97316"/><path d="M436,36 L436,52 M428,44 L444,44" stroke="#f97316"/>
+<path d="M30,44 L100,44 M168,44 L260,44" stroke-width="1.5"/>
+<rect x="20" y="100" width="232" height="40" rx="8"/>
+<path d="M30,114 L100,114 M30,128 L90,128" stroke-width="1.5"/>
+<rect x="20" y="148" width="232" height="40" rx="8"/>
+<path d="M30,162 L100,162 M30,176 L90,176" stroke-width="1.5"/>
+<rect x="20" y="196" width="232" height="40" rx="8"/>
+<path d="M30,210 L100,210 M30,224 L90,224" stroke-width="1.5"/>
+<rect x="20" y="100" width="232" height="40" rx="8" stroke="#f97316" opacity="0"><animate attributeName="opacity" dur="6s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.4;0.93" values="0;1;0"/></rect>
+<rect x="270" y="100" width="190" height="148" rx="10"/><path d="M270,128 L460,128 M270,168 L460,168 M270,208 L460,208 M330,100 L330,248 M395,100 L395,248" stroke-width="1.5"/>
+<path d="M285,148 L318,148 M285,188 L318,188 M285,228 L318,228" stroke-width="1.5"/>
+<path d="M346,148 L378,148 M346,188 L366,188 M346,228 L372,228 M410,148 L430,148 M410,188 L440,188 M410,228 L424,228" stroke="#3b82f6" stroke-width="2"/>
+</g>
+<circle r="6" fill="#f97316" stroke="none"><animateMotion dur="6s" repeatCount="indefinite" path="M436,66 Q330,100 190,112" keyPoints="0;1;1" keyTimes="0;0.4;1" calcMode="linear"/><animate attributeName="opacity" dur="6s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.4;0.93" values="1;0;0"/></circle>
+<text x="314" y="52" style="font-size:15px">all units</text>
+<text x="154" y="130" style="fill:#f97316" opacity="0">landlord<animate attributeName="opacity" dur="6s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.4;0.93" values="0;1;0"/></text>
+<text x="152" y="178">from reply</text><text x="152" y="226">seed</text>
+<text x="336" y="120">views</text><text x="400" y="120">asked</text>
+</svg>

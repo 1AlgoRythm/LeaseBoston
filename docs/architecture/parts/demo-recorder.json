@@ -1,0 +1,255 @@
+{
+ "parent": {
+  "id": "demo-recorder",
+  "name": "Demo recorder",
+  "one_liner": "Scripts that drive Claude Desktop and record the demo video",
+  "explain": "I drive the real Claude Desktop app with a script, so the demo video shows a live chat and not a mock-up. I use agent-desktop, a command-line tool that reads each app's accessibility tree (the labelled list of buttons and fields it exposes). run_demo.py plays seven scenes while macOS screencapture records, and edit.py cuts the result into one video with a title card per scene. The whole run takes about 5 minutes with my hands off the keyboard, and the previous app comes back when it ends.",
+  "why": "Without a script, the demo would be a hand-made screen capture that nobody could repeat exactly. A scripted run replays the same seven scenes after any design change, so I can re-record the video in minutes.",
+  "basis": "inferred",
+  "owner": "me",
+  "units": [
+   {
+    "name": "ad.py",
+    "detail": "A thin wrapper that runs one agent-desktop command and returns its JSON reply."
+   },
+   {
+    "name": "run_demo.py main",
+    "detail": "Resets the demo data, restarts both apps, checks the layout, then plays the seven scenes."
+   },
+   {
+    "name": "step / end_step",
+    "detail": "Log the label, start and end second of each scene into steps.json."
+   },
+   {
+    "name": "edit.py",
+    "detail": "Cuts raw.mov and raw2.mov into leaseboston-demo.mp4 using ffmpeg."
+   },
+   {
+    "name": "SUBTITLES",
+    "detail": "One caption per scene, shown on its title card."
+   }
+  ],
+  "evidence": [
+   {
+    "file": "demo/run_demo.py",
+    "line": 1,
+    "quote": "\"\"\"Drive the LeaseBoston demo in Claude Desktop + the landlord page, while recording the screen."
+   },
+   {
+    "file": "demo/run_demo.py",
+    "line": 23,
+    "quote": "def step(label):"
+   },
+   {
+    "file": "demo/run_demo.py",
+    "line": 213,
+    "quote": "step(\"7. Next renter: answered instantly from the landlord's new answer\")"
+   },
+   {
+    "file": "demo/run_demo.py",
+    "line": 222,
+    "quote": "subprocess.run([\"open\", \"-a\", \"Obsidian\"])   # back to Obsidian = the demo is over"
+   },
+   {
+    "file": "demo/edit.py",
+    "line": 1,
+    "quote": "\"\"\"Cut the raw recording into the final demo video."
+   },
+   {
+    "file": "demo/README.md",
+    "line": 26,
+    "quote": "python3 demo/run_demo.py                 # about 5 minutes, hands off"
+   }
+  ]
+ },
+ "children": [
+  {
+   "id": "accessibility-driver",
+   "name": "Accessibility driver",
+   "one_liner": "Finds buttons by role and name, then acts on their refs",
+   "explain": "I wrap the agent-desktop command-line tool in ad.run, which runs one command and parses its JSON reply. To find a control, I search the accessibility tree (the labelled list of buttons and fields an app exposes) by role and name. Each match carries a ref_id, a short handle that later click and type commands use as their target. A find that matches nothing still returns ok:true, so I count the matches instead of trusting the ok flag. To see if Claude is busy, I look for a 'Stop response' button every 1.5 seconds; two empty checks mean it is done.",
+   "why": "If I trusted the ok flag, every search would look like a hit and the script would think Claude was always busy. It would then never move to the next scene. Searching by role and name also survives a button moving, where fixed screen coordinates would not.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "run",
+     "detail": "Runs agent-desktop with optional --headed and returns the parsed JSON."
+    },
+    {
+     "name": "ref",
+     "detail": "Finds one element by role and name and returns its ref_id, or None."
+    },
+    {
+     "name": "matches",
+     "detail": "Returns the list of matches for a name, role and app, empty when nothing matches."
+    },
+    {
+     "name": "click",
+     "detail": "Takes the chosen match and clicks its ref_id."
+    },
+    {
+     "name": "wait_done",
+     "detail": "Polls every 1.5 s and returns once 'Stop response' has been gone for two checks in a row."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "demo/ad.py",
+     "line": 4,
+     "quote": "def run(*args, headed=False):"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 78,
+     "quote": "busy = bool(matches(\"Stop response\", \"button\"))"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 36,
+     "quote": "return data.get(\"matches\") or ([data[\"match\"]] if data.get(\"match\") else [])"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 43,
+     "quote": "r = ad.run(\"click\", m[index][\"ref_id\"])"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 78,
+     "quote": "busy = bool(matches(\"Stop response\", \"button\"))"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 81,
+     "quote": "if idle >= 2 and (seen or time.time() - t > 20):"
+    }
+   ],
+   "svg": "accessibility-driver.svg"
+  },
+  {
+   "id": "headed-input",
+   "name": "Headed input",
+   "one_liner": "Types with real keystrokes and sends by clicking the button",
+   "explain": "Claude Desktop's message box ignores text typed in the background, so I type with agent-desktop's --headed mode, which sends real keystrokes. Real keystrokes use the live keyboard, so I keep my hands off until the script brings the previous app back. To send, send() fills the box and then clicks the 'Send message' button instead of pressing Return. Focus can sit on a card button in the chat, and Return would press that button instead of sending my message. When an approval prompt appears, wait_done pauses 1.2 seconds so a viewer can read it, then clicks 'Allow once'.",
+   "why": "Background typing would leave the box empty, so the demo would send nothing. Clicking the named button sends the message whichever control holds focus. The price is that any touch of the keyboard during the run lands in the wrong place.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "run(..., headed=True)",
+     "detail": "Puts --headed in front of the command so input arrives as real events."
+    },
+    {
+     "name": "type_into",
+     "detail": "Finds a field by its placeholder text and types into the last match with headed=True."
+    },
+    {
+     "name": "send",
+     "detail": "Tries three placeholder names, types, waits 0.6 s, then clicks 'Send message'."
+    },
+    {
+     "name": "wait_done approval",
+     "detail": "Spots 'Allow once', waits 1.2 s for the viewer, then clicks it and keeps waiting."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "demo/README.md",
+     "line": 19,
+     "quote": "- **Hands off.** Claude Desktop's message box ignores text typed in the background, so the script uses real keystrokes"
+    },
+    {
+     "file": "demo/ad.py",
+     "line": 5,
+     "quote": "cmd = [\"agent-desktop\"] + ([\"--headed\"] if headed else []) + list(args)"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 51,
+     "quote": "return ad.run(\"type\", m[index][\"ref_id\"], text, headed=True).get(\"ok\")"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 68,
+     "quote": "click(\"Send message\")"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 76,
+     "quote": "time.sleep(1.2)  # let the viewer see the approval prompt"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 77,
+     "quote": "click(\"Allow once\"); print(\"   approved\", flush=True); idle = 0; continue"
+    }
+   ],
+   "svg": "headed-input.svg"
+  },
+  {
+   "id": "recording-edit",
+   "name": "Recording and editing",
+   "one_liner": "Records below the menu bar, pauses for new chats, speeds long scenes",
+   "explain": "I record with macOS screencapture -v on the region 0,33,1512,949, which starts below the menu bar. Before recording, I check each window's x, width and height, retrying up to three times, and stop if a window is wrong. I stop the recording with SIGINT (the interrupt signal Ctrl-C sends) while a new chat opens, then start a second file, raw2.mov. edit.py puts a title card of 3.5 seconds before each scene and speeds up long scenes. It sets the speed to the clip length divided by 40, so no scene lasts longer than 40 seconds.",
+   "why": "The sidebar would show my chat history while a new chat opens, so the recording pauses around it. Checking the layout first means a misplaced window stops the run in seconds, not after a five-minute take. Capping scenes at 40 seconds hides the waiting for Claude.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "screencapture -v -R0,33,1512,949",
+     "detail": "Records video of one screen region; the 33 pixel offset skips the menu bar."
+    },
+    {
+     "name": "window check loop",
+     "detail": "Tries up to three times to match each window's bounds, then exits with 'nothing recorded'."
+    },
+    {
+     "name": "new_chat",
+     "detail": "Opens the sidebar, clicks New, hides the sidebar, and exits if either step failed."
+    },
+    {
+     "name": "MAX_SECONDS",
+     "detail": "Caps each scene at 40 seconds by setting speed = max(1.0, dur / MAX_SECONDS)."
+    },
+    {
+     "name": "steps.json",
+     "detail": "Holds each scene's label, start and end second so edit.py knows where to cut."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "demo/run_demo.py",
+     "line": 140,
+     "quote": "rec = subprocess.Popen([\"screencapture\", \"-v\", \"-x\", \"-k\", \"-R0,33,1512,949\", f\"{OUT}/raw.mov\"])"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 129,
+     "quote": "raise SystemExit(f\"setup failed: {app} window is {b}, not x={x} w={w}; nothing recorded\")"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 208,
+     "quote": "rec.send_signal(signal.SIGINT); rec.wait(timeout=30)   # pause recording: the sidebar flashes"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 89,
+     "quote": "\"\"\"Open a fresh chat. The sidebar flashes open, so never call this while recording.\"\"\""
+    },
+    {
+     "file": "demo/edit.py",
+     "line": 13,
+     "quote": "W, H, FPS, MAX_SECONDS = 1512, 950, 30, 40  # step times are from T0, which starts 2 s into raw.mov"
+    },
+    {
+     "file": "demo/edit.py",
+     "line": 63,
+     "quote": "speed = max(1.0, dur / MAX_SECONDS)"
+    }
+   ],
+   "svg": "recording-edit.svg"
+  }
+ ]
+}

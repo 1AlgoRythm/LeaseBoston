@@ -1,0 +1,323 @@
+{
+ "parent": {
+  "id": "chat-card",
+  "name": "In-chat card (MCP App)",
+  "one_liner": "Search results and answers drawn as a card inside the chat",
+  "explain": "I show results inside the chat as a card, a small web page the host draws in a locked-down box called a sandboxed iframe. The page is one file, app.html, with no outside scripts or fonts, because the default security policy would block them. It talks to the host with JSON-RPC (small JSON request and reply messages) sent over postMessage, following the 2026-01-26 spec. The tool result picks the view: matches become a carousel, and a status becomes an answer or a consent form. Both search_apartments and ask_landlord point at this card, and other hosts just get the same data as text.",
+  "why": "Without a card, the renter would read long lists of listings as chat text. Keeping the card in one file with no network needs means it loads fast inside a sandbox. Hosts that ignore cards still work, because the same data comes back as text.",
+  "basis": "evidence",
+  "owner": "me",
+  "units": [
+   {
+    "name": "app.html",
+    "detail": "The single page that holds the styles, the message plumbing and both views."
+   },
+   {
+    "name": "CARD",
+    "detail": "The ui:// address I register the page under, shared by two tools."
+   },
+   {
+    "name": "render",
+    "detail": "Picks the carousel or the answer view from the tool result's structuredContent."
+   },
+   {
+    "name": "listings",
+    "detail": "Draws the carousel view for search results."
+   },
+   {
+    "name": "answer",
+    "detail": "Draws the landlord's answer or the consent form."
+   }
+  ],
+  "evidence": [
+   {
+    "file": "leaseapp/ui/app.html",
+    "line": 3,
+    "quote": "LeaseBoston's in-chat card (an MCP App). Claude Desktop draws this page in a sandboxed"
+   },
+   {
+    "file": "leaseapp/ui/app.html",
+    "line": 4,
+    "quote": "iframe under the tool call and talks to it with JSON-RPC over postMessage"
+   },
+   {
+    "file": "leaseapp/ui/app.html",
+    "line": 11,
+    "quote": "One page, two views, picked from the tool result's structuredContent:"
+   },
+   {
+    "file": "leaseapp/ui/app.html",
+    "line": 144,
+    "quote": "} else if (sc.matches) listings(sc);"
+   },
+   {
+    "file": "leaseapp/ui/app.html",
+    "line": 145,
+    "quote": "else if (sc.status) answer(sc);"
+   },
+   {
+    "file": "leaseapp/mcp_server.py",
+    "line": 56,
+    "quote": "CARD = \"ui://leaseboston/card.html\""
+   }
+  ]
+ },
+ "children": [
+  {
+   "id": "card-handshake",
+   "name": "Handshake with the host",
+   "svg": "card-handshake.svg",
+   "one_liner": "JSON-RPC messages over postMessage tell the host who I am",
+   "explain": "I talk to the host in JSON-RPC, small JSON envelopes with an id, a method and params, sent by window.parent.postMessage. Each request gets a number, and I park its resolve and reject callbacks in a pending map until the reply with that id arrives. On load I send ui/initialize with my app name, protocol version 2026-01-26 and empty capabilities, then ui/notifications/initialized once the host replies. The host pushes tool-input and tool-result notifications, and a ResizeObserver reports my size with size-changed whenever the page grows or shrinks. Any other host request, like a teardown or ping, gets an empty result back so the host never waits on me.",
+   "why": "Without the pending map, a reply could not be matched to the question that caused it. Without the initialize step, the host would not know the card is ready for results. Without size-changed, the iframe would stay the wrong height.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "request",
+     "detail": "Sends a JSON-RPC request and returns a promise stored in the pending map under its id."
+    },
+    {
+     "name": "pending",
+     "detail": "The map of waiting requests; a matching reply deletes its entry and resolves or rejects it."
+    },
+    {
+     "name": "notify",
+     "detail": "Sends a JSON-RPC message with no id, so no reply is expected."
+    },
+    {
+     "name": "ui/initialize",
+     "detail": "The first request, carrying appInfo, appCapabilities and protocolVersion 2026-01-26."
+    },
+    {
+     "name": "ResizeObserver",
+     "detail": "Sends ui/notifications/size-changed with the page's width and height."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 96,
+     "quote": "window.parent.postMessage({ jsonrpc: \"2.0\", id, method, params }, \"*\");"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 97,
+     "quote": "return new Promise((resolve, reject) => { pending[id] = { resolve, reject }; });"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 105,
+     "quote": "if (m.id !== undefined && !m.method && pending[m.id]) {           // a reply to our request"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 110,
+     "quote": "if (m.method === \"ui/notifications/tool-input\") toolInput = (m.params && m.params.arguments) || {};"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 119,
+     "quote": "request(\"ui/initialize\", { appInfo: { name: \"leaseboston-card\", version: \"0.2.0\" }, appCapabilities: {},"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 121,
+     "quote": ".then(() => notify(\"ui/notifications/initialized\", {}));"
+    }
+   ]
+  },
+  {
+   "id": "card-carousel",
+   "name": "Results carousel",
+   "svg": "card-carousel.svg",
+   "one_liner": "Matches and near misses scroll as snapping 248px tiles",
+   "explain": "When the tool result has matches, I draw a rail of tiles, each 248px wide, that snaps into place as the renter scrolls. Each tile shows a badge like N% match, the monthly rent, the title, and facts such as neighborhood, beds, baths and square feet. Under that I show the first two reasons with a check mark, then a pets chip and two amenity chips. Near-miss listings follow as Almost tiles that show why they missed, with a cross instead of a check. Under the rail, the ‹ and › buttons and a 1 / N counter show where I am.",
+   "why": "A tile has the same few facts every time, so the renter can compare listings by swiping instead of reading paragraphs. Showing near misses next to matches tells the renter which one filter to loosen. Setting text with textContent only means listing data can never be run as HTML.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "listings",
+     "detail": "Builds the rail, the counter and the two arrow buttons from the matches and near_misses."
+    },
+    {
+     "name": "tile",
+     "detail": "Builds one tile: badge, rent, title, facts, two reasons, chips and the ask buttons."
+    },
+    {
+     "name": ".tile",
+     "detail": "Fixes each tile at 248px with scroll-snap-align start."
+    },
+    {
+     "name": "rail scroll handler",
+     "detail": "Works out the tile number from scrollLeft and updates the 1 / N counter."
+    },
+    {
+     "name": "h",
+     "detail": "The small DOM helper that sets text only, so data is never parsed as HTML."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 38,
+     "quote": ".tile { flex: 0 0 248px; scroll-snap-align: start; background: #fff; border: 1px solid var(--line);"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 152,
+     "quote": "sc.matches.map((l) => tile(l, l.why_it_fits, `${l.fit_score}% match`, false)),"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 153,
+     "quote": "misses.map((l) => tile(l, l.why_not, \"Almost\", true)));"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 154,
+     "quote": "const count = h(\"span\", { class: \"muted\" }, `1 / ${n + misses.length}`);"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 179,
+     "quote": "h(\"ul\", { class: \"why\" }, (reasons || []).slice(0, 2).map((r) => h(\"li\", {}, r.replace(/^[\\d.]+ km from (.+) \\(about (\\d+) min walk, straight line\\)$/, \"~$2 min walk to $1\")))),"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 123,
+     "quote": "// ---------- tiny DOM helper (textContent only, so data is never parsed as HTML) ----------"
+    }
+   ]
+  },
+  {
+   "id": "card-message",
+   "name": "Ask landlord box",
+   "svg": "card-message.svg",
+   "one_liner": "The card asks the host to fill the renter's message box",
+   "explain": "Each tile has an Ask landlord button that swaps itself for a text box and an Ask button. When the renter presses Ask or Enter, I send the host a ui/message request with role user and a content array of one text part. The text reads Ask the landlord of the listing id, then the question the renter typed. The host puts that text in the renter's message box, and the renter presses send, so the renter keeps the last word. A blank question sends nothing, because I only submit when the trimmed text is not empty.",
+   "why": "If the card wrote straight to the landlord, a stray click could send a message the renter never reviewed. Going through the renter's own message box keeps a human yes in front of every question. The chat model then sees an ordinary user message and calls ask_landlord.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "say",
+     "detail": "Sends ui/message with role user and a content array of one text part."
+    },
+    {
+     "name": "submit",
+     "detail": "Sends the question only if the trimmed input is not empty."
+    },
+    {
+     "name": "Ask landlord button",
+     "detail": "Hides the buttons and shows the question box, then focuses it."
+    },
+    {
+     "name": "Details button",
+     "detail": "Uses the same say path to send Tell me more about the listing."
+    },
+    {
+     "name": "keydown handler",
+     "detail": "Lets the renter press Enter instead of clicking Ask."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 100,
+     "quote": "function say(text) { return request(\"ui/message\", { role: \"user\", content: [{ type: \"text\", text }] }); }"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 167,
+     "quote": "const q = h(\"input\", { placeholder: \"e.g. Is parking included?\" });"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 168,
+     "quote": "const submit = () => q.value.trim() && say(`Ask the landlord of ${l.id}: ${q.value.trim()}`);"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 169,
+     "quote": "q.addEventListener(\"keydown\", (e) => { if (e.key === \"Enter\") submit(); });"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 170,
+     "quote": "const ask = h(\"div\", { class: \"ask\" }, q, h(\"button\", { onclick: submit }, \"Ask\"));"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 172,
+     "quote": "h(\"button\", { onclick: () => { actions.style.display = \"none\"; ask.style.display = \"flex\"; q.focus(); } }, \"Ask landlord\"),"
+    }
+   ]
+  },
+  {
+   "id": "card-consent",
+   "name": "Consent form",
+   "svg": "card-consent.svg",
+   "one_liner": "The renter sends their own question to the landlord from the card",
+   "explain": "When the landlord has not answered, I show a form with the renter's name, a channel and a contact. The channel is email, text, app notification or chat only, and the contact hint changes to match, or disappears for chat only. When the renter presses Send, I check the name is filled, then call send_question_to_landlord myself with a tools/call request and the reference code. On success I swap the form for Sent to the landlord, with the reference and how the reply will arrive. Then I tell the chat with a ui/message, so Claude knows not to send it again.",
+   "why": "The renter's click on Send is the clear yes the server instructions require before anything reaches a landlord. Telling the chat afterward stops Claude from sending the same question a second time. A failed call re-enables the button and shows the error instead of losing the form.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "consentForm",
+     "detail": "Builds the name, channel and contact fields and the Send button."
+    },
+    {
+     "name": "consentToggle",
+     "detail": "On an answered card, hides the form behind a button reading Not quite it? Ask the landlord directly."
+    },
+    {
+     "name": "tools/call",
+     "detail": "The request that runs send_question_to_landlord with reference_code, renter_name, channel and contact."
+    },
+    {
+     "name": "sent banner",
+     "detail": "Replaces the form with the reference code and how_reply_arrives."
+    },
+    {
+     "name": "say",
+     "detail": "Posts a ui/message saying the renter sent the question from the card."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 212,
+     "quote": "const channel = h(\"select\", {}, [[\"email\", \"Email me\"], [\"sms\", \"Text me\"], [\"app\", \"LeaseBoston app notification\"],"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 217,
+     "quote": "contact.placeholder = { email: \"Email address\", sms: \"Phone number\", app: \"LeaseBoston username or email\" }[channel.value] || \"\";"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 224,
+     "quote": "const r = await request(\"tools/call\", { name: \"send_question_to_landlord\", arguments: {"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 229,
+     "quote": "form.replaceChildren(h(\"div\", { class: \"sent full\" }, h(\"b\", {}, \"✓ Sent to the landlord\"),"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 231,
+     "quote": "say(`I sent my question to the landlord myself from the card (reference ${sc.reference_code}).`);"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 48,
+     "quote": "card themselves; you will then see a message saying so. Do not send it again."
+    }
+   ]
+  }
+ ]
+}

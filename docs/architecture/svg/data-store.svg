@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="Two processes, the stdio server and the web server, share one SQLite file in WAL mode, which holds six tables">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="20" y="50" width="80" height="50" rx="5"/>
+<rect x="20" y="200" width="80" height="50" rx="5"/>
+<path d="M175,110 L175,190 C175,215 265,215 265,190 L265,110"/>
+<ellipse cx="220" cy="110" rx="45" ry="14"/>
+<path d="M100,78 L170,122" stroke="#f97316"/>
+<path d="M100,222 L170,178" stroke="#3b82f6"/>
+<path d="M200,208 L190,228 M240,208 L255,228" stroke-dasharray="3 6" stroke-width="2"/>
+<rect x="165" y="228" width="55" height="26" rx="3" stroke-dasharray="5 5"/>
+<rect x="235" y="228" width="55" height="26" rx="3" stroke-dasharray="5 5"/>
+<path d="M270,150 L330,150"/>
+<path d="M340,50 h100 v24 h-100 z M340,82 h100 v24 h-100 z M340,114 h100 v24 h-100 z M340,146 h100 v24 h-100 z M340,178 h100 v24 h-100 z M340,210 h100 v24 h-100 z" stroke-width="2"/>
+</g>
+<rect x="341" y="51" width="98" height="22" fill="#f97316" fill-opacity=".35" stroke="none"><animate attributeName="y" dur="6s" repeatCount="indefinite" calcMode="discrete" values="51;83;115;147;179;211" keyTimes="0;0.1667;0.3333;0.5;0.6667;0.8333"/></rect>
+<circle r="6" fill="#f97316" stroke="none"><animateMotion dur="3s" repeatCount="indefinite" path="M100,78 L170,122"/></circle>
+<circle r="6" fill="#3b82f6" stroke="none" opacity="0"><set attributeName="opacity" to="1" begin="1.5s"/><animateMotion dur="3s" begin="1.5s" repeatCount="indefinite" path="M100,222 L170,178"/></circle>
+<text x="40" y="82">stdio</text>
+<text x="46" y="232">web</text>
+<text x="190" y="156">lease.db</text>
+<text x="173" y="246" style="font-size:14px">-wal</text>
+<text x="243" y="246" style="font-size:14px">-shm</text>
+<text x="350" y="266">6 tables</text>
+</svg>

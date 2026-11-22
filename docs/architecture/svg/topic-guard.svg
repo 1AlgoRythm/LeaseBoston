@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="Shared words include and rent are generic, so the gate stays shut; a shared topic word like parking passes through">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<path d="M130,90 L270,90 M300,90 L450,90" stroke-opacity=".5" stroke-dasharray="2 7" stroke-width="1.8"/>
+<path d="M285,55 L285,125"/>
+<path d="M130,205 L270,205 M300,205 L450,205" stroke-opacity=".5" stroke-dasharray="2 7" stroke-width="1.8"/>
+<path d="M285,165 L285,190 M285,220 L285,245"/>
+<path d="M269,72 L301,108 M301,72 L269,108" stroke="#ef4444" stroke-width="3.5" opacity="0"><animate attributeName="opacity" dur="7s" repeatCount="indefinite" keyTimes="0;0.3;0.34;0.92;1" values="0;0;1;1;0"/></path>
+</g>
+<circle r="6" fill="#f97316" stroke="none" opacity="0"><animateMotion dur="7s" repeatCount="indefinite" path="M130,90 L268,90" keyPoints="0;1;1" keyTimes="0;0.3;1" calcMode="linear"/><animate attributeName="opacity" dur="7s" repeatCount="indefinite" keyTimes="0;0.02;0.36;0.4;1" values="0;1;1;0;0"/></circle>
+<circle r="6" fill="#f97316" stroke="none" opacity="0"><animateMotion dur="7s" repeatCount="indefinite" path="M130,205 L450,205" keyPoints="0;0;1;1" keyTimes="0;0.45;0.8;1" calcMode="linear"/><animate attributeName="opacity" dur="7s" repeatCount="indefinite" keyTimes="0;0.45;0.46;0.85;0.9;1" values="0;0;1;1;0;0"/></circle>
+<text x="20" y="96">include rent</text>
+<text x="20" y="211" style="fill:#f97316">parking</text>
+<text x="330" y="80" style="fill:#ef4444" opacity="0">blocked<animate attributeName="opacity" dur="7s" repeatCount="indefinite" keyTimes="0;0.3;0.34;0.92;1" values="0;0;1;1;0"/></text>
+<text x="330" y="232" style="fill:#3b82f6" opacity="0">scored<animate attributeName="opacity" dur="7s" repeatCount="indefinite" keyTimes="0;0.7;0.74;0.92;1" values="0;0;1;1;0"/></text>
+</svg>

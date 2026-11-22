@@ -1,0 +1,246 @@
+{
+ "parent": {
+  "id": "tests",
+  "name": "29 tests and proof",
+  "one_liner": "29 tests, five broken guards and real Claude runs back the claims.",
+  "explain": "I back every claim with 29 automated tests, and 18 of them are matching cases for the saved-answer matcher. Two journey tests start the real server as its own process and replay the full story over stdio (plain pipes) and HTTP. A mutation script then breaks five safety guards on purpose, and a guard only counts as protected if a test fails. Last, I run real Claude sessions and judge them by the database rows they leave, not by the chat text.",
+  "why": "A green test only means something if it can also go red, so each guard is broken on purpose and a test must fail. Chat text can sound right while the database shows nothing was sent, so the rows are the honest witness.",
+  "basis": "evidence",
+  "owner": "me",
+  "units": [
+   {
+    "name": "test_saved_answer_matching",
+    "detail": "Runs 18 matching cases (10 must answer, 8 must go to the landlord) against a fresh temporary database."
+   },
+   {
+    "name": "journey",
+    "detail": "One async function that plays the whole renter-and-landlord story, reused by the stdio and HTTP tests."
+   },
+   {
+    "name": "MUTATIONS",
+    "detail": "Five (file, guard text, replacement, test selector) rows that tests/mutation_check.py breaks one at a time."
+   },
+   {
+    "name": "demo/run_demo.py",
+    "detail": "Drives the real Claude Desktop app and the landlord page through seven scenes while recording the screen."
+   }
+  ],
+  "evidence": [
+   {
+    "file": "tests/test_mvp.py",
+    "line": 1,
+    "quote": "\"\"\"End-to-end and unit tests. Run: uv run pytest -q"
+   },
+   {
+    "file": "README.md",
+    "line": 191,
+    "quote": "- **29 automated tests** (`tests/test_mvp.py`), including one that checks the card is attached to the right tools:"
+   },
+   {
+    "file": "tests/mutation_check.py",
+    "line": 54,
+    "quote": "print(f\"{len(MUTATIONS) - missed} of {len(MUTATIONS)} guards are protected by a failing test\")"
+   },
+   {
+    "file": "demo/README.md",
+    "line": 3,
+    "quote": "These scripts recorded `docs/demo.mp4`. They drive the real Claude Desktop app and a browser window showing the landlord"
+   },
+   {
+    "file": "README.md",
+    "line": 201,
+    "quote": "- **Real Claude (Haiku 5.5, Claude Code headless), 5 sessions, checked against the database.** The first four ran over stdio:"
+   }
+  ]
+ },
+ "children": [
+  {
+   "id": "journey-tests",
+   "name": "Journey over stdio and HTTP",
+   "one_liner": "One story, replayed over stdio and HTTP against a real server.",
+   "explain": "I write the whole renter-and-landlord story once, as a function called journey, and run it twice. Run one starts the server as a separate process and talks over stdio, which is how Claude Desktop runs it. Run two starts a real HTTP server on a free port, and the landlord's reply goes through the real web form. Both runs search, get a saved answer, get not_answered, send the question, read the reply, then get the new saved answer. Two extra tests check the tunnel: the landlord page answers 403 to the tunnel hostname, and /mcp rejects an unknown host.",
+   "why": "One shared function means the two transports cannot drift apart, because the same asserts run on both. Unit tests alone would miss a bug in how the server starts or in the form post. The last step proves a landlord's reply really becomes a saved answer for the next renter.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "journey",
+     "detail": "Checks the five tool names, then search, saved answer, not_answered, send, waiting, reply, replied and the new saved answer."
+    },
+    {
+     "name": "test_journey_over_stdio",
+     "detail": "Launches python -m leaseapp stdio as a subprocess; the reply is written straight to the shared database."
+    },
+    {
+     "name": "http_server",
+     "detail": "Starts the server on a free port with a tunnel hostname, waits until it listens, and terminates it afterwards."
+    },
+    {
+     "name": "test_journey_over_http_with_landlord_page",
+     "detail": "Posts the reply to /landlord/L1/reply/<ref> exactly as the landlord's form would, then checks the page and outbox."
+    },
+    {
+     "name": "test_landlord_page_is_localhost_only",
+     "detail": "Expects 403 for the tunnel hostname on /landlord and 200 for localhost."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "tests/test_mvp.py",
+     "line": 4,
+     "quote": "stdio (how Claude Desktop runs it) and once over HTTP (how ChatGPT reaches it),"
+    },
+    {
+     "file": "tests/test_mvp.py",
+     "line": 132,
+     "quote": "async def journey(client: Client, post_reply) -> None:"
+    },
+    {
+     "file": "tests/test_mvp.py",
+     "line": 232,
+     "quote": "def reply(lid, ref, text):  # exactly what the landlord's form submits"
+    },
+    {
+     "file": "tests/test_mvp.py",
+     "line": 238,
+     "quote": "await journey(c, reply)"
+    },
+    {
+     "file": "tests/test_mvp.py",
+     "line": 167,
+     "quote": "assert again[\"status\"] == \"answered\" and \"courtyard\" in again[\"answer\"]"
+    },
+    {
+     "file": "tests/test_mvp.py",
+     "line": 256,
+     "quote": "for host, ok in ((\"demo.trycloudflare.com\", True), (\"evil.example\", False)):"
+    }
+   ],
+   "svg": "journey-tests.svg"
+  },
+  {
+   "id": "mutation-checks",
+   "name": "Mutation checks",
+   "one_liner": "Five guards broken on purpose; a test must fail each time.",
+   "explain": "I break each of five safety guards on purpose and check that a test notices. For every guard, tests/mutation_check.py swaps the exact guard text for a harmless replacement in the source file. It runs the single test that should notice, then always restores the real file, even if the run crashes. The five guards are the topic-word rule, the localhost-only landlord page, send-once, saving a reply as an answer, and landlord ownership. A guard counts as caught only when pytest exits with an error, and all 5 of 5 were caught.",
+   "why": "A passing suite proves little until it can fail. Without this check, a guard could be deleted and every test would stay green, so a silent safety hole would ship.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "MUTATIONS",
+     "detail": "Five rows of file, exact guard text, replacement, and the pytest -k selector that should fail."
+    },
+    {
+     "name": "GUARD NOT FOUND",
+     "detail": "If the guard text does not appear exactly once, the guard is reported as missed instead of silently skipped."
+    },
+    {
+     "name": "write and restore",
+     "detail": "The broken text is written, pytest runs, and a finally block puts the original file back."
+    },
+    {
+     "name": "caught",
+     "detail": "A guard is caught when the pytest return code is not zero; the script prints how many of 5 are protected."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "tests/mutation_check.py",
+     "line": 3,
+     "quote": "A test suite that passes proves little until you know it can fail. For each guard"
+    },
+    {
+     "file": "tests/mutation_check.py",
+     "line": 17,
+     "quote": "MUTATIONS = ["
+    },
+    {
+     "file": "tests/mutation_check.py",
+     "line": 41,
+     "quote": "if original.count(guard) != 1:"
+    },
+    {
+     "file": "tests/mutation_check.py",
+     "line": 45,
+     "quote": "path.write_text(original.replace(guard, broken, 1))"
+    },
+    {
+     "file": "tests/mutation_check.py",
+     "line": 50,
+     "quote": "path.write_text(original)        # always restore the real code"
+    },
+    {
+     "file": "tests/mutation_check.py",
+     "line": 51,
+     "quote": "caught = r.returncode != 0"
+    }
+   ],
+   "svg": "mutation-checks.svg"
+  },
+  {
+   "id": "real-claude-runs",
+   "name": "Real Claude runs",
+   "one_liner": "Real Claude sessions judged by database rows, not chat text.",
+   "explain": "I run real Claude sessions and judge them by the database rows they leave, not by what the chat text says. Some runs used headless Claude Haiku (Claude Code with no window), over stdio and over HTTP. Others used the real Claude Desktop app, which demo/run_demo.py drives with typed keystrokes and button clicks across seven scenes. One run caught a bug: Claude answered a repeat question from chat history and did not call ask_landlord again, so it missed the new answer. I fixed it with a server instruction to call ask_landlord again every time, and the retake confirmed the fix.",
+   "why": "A chat transcript can read fine while nothing was saved or sent, so the database is the only honest witness. Only a real model, run end to end, can show it skipping a tool call that the scripted tests always make.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "headless Haiku runs",
+     "detail": "Claude Code sessions over stdio and HTTP, checked afterwards against the database."
+    },
+    {
+     "name": "demo/run_demo.py",
+     "detail": "Resets the demo database, restarts Claude Desktop and the landlord server, then plays seven scenes."
+    },
+    {
+     "name": "wait_done",
+     "detail": "Clicks Allow once when asked and waits until Stop response is gone, with a 200 second timeout."
+    },
+    {
+     "name": "step 7",
+     "detail": "Opens a fresh chat and re-asks the bike question so it is answered from the landlord's new saved answer."
+    },
+    {
+     "name": "re-ask instruction",
+     "detail": "The server instructions tell Claude to call ask_landlord again every time a question is asked."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "README.md",
+     "line": 201,
+     "quote": "- **Real Claude (Haiku 5.5, Claude Code headless), 5 sessions, checked against the database.** The first four ran over stdio:"
+    },
+    {
+     "file": "README.md",
+     "line": 221,
+     "quote": "- **Claude can answer from chat history.** In the first recorded take, Claude did not call `ask_landlord` again for a repeat"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 43,
+     "quote": "- Landlords add answers over time. Call ask_landlord again every time a question is"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 44,
+     "quote": "asked, even if the same question got \"not_answered\" earlier in this chat."
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 213,
+     "quote": "step(\"7. Next renter: answered instantly from the landlord's new answer\")"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 215,
+     "quote": "send(\"Hi, I'm looking at A203. Ask the landlord: can I store my bike in the basement?\")"
+    }
+   ],
+   "svg": "real-claude-runs.svg"
+  }
+ ]
+}

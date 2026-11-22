@@ -1,0 +1,378 @@
+{
+ "parent": {
+  "id": "answer-matcher",
+  "name": "Answer matcher",
+  "one_liner": "Finds the landlord's saved answer, or admits there is none.",
+  "explain": "I decide whether a landlord already answered a renter's question, using plain code with no AI model. That means the same question always gets the same result. I turn each question into key words, then weigh each word by how rare it is across all saved questions. I score a pair of questions as the average of overlap and coverage, and I require a shared topic word. At 0.5 or higher I return the saved answer word for word; below that I answer nothing and offer to ask the landlord.",
+  "why": "A confident wrong answer about a deposit or a pet rule can mislead a renter, so I only answer when the match is strong. Plain code gives the same result every time, which lets me pin each tricky case in a test. A miss just means a short wait for the landlord.",
+  "basis": "evidence",
+  "owner": "me",
+  "units": [
+   {
+    "name": "keywords",
+    "detail": "Turns a question into a set of canonical key words."
+   },
+   {
+    "name": "idf_weights",
+    "detail": "Weights each word by how rare it is across saved questions."
+   },
+   {
+    "name": "score",
+    "detail": "Averages overlap and coverage, and returns 0 without a shared topic word."
+   },
+   {
+    "name": "best_match",
+    "detail": "Returns the top-scoring saved question, whatever its score."
+   },
+   {
+    "name": "ask_landlord",
+    "detail": "Applies the 0.5 cut-off and decides answered or not_answered."
+   }
+  ],
+  "evidence": [
+   {
+    "file": "leaseapp/matcher.py",
+    "line": 3,
+    "quote": "Plain code, no model: the same question always gives the same result."
+   },
+   {
+    "file": "leaseapp/matcher.py",
+    "line": 22,
+    "quote": "MATCH_THRESHOLD = 0.5"
+   },
+   {
+    "file": "leaseapp/matcher.py",
+    "line": 110,
+    "quote": "def best_match(question: str, candidates: list[dict], idf: dict[str, float]) -> Match | None:"
+   },
+   {
+    "file": "leaseapp/service.py",
+    "line": 56,
+    "quote": "best = matcher.best_match(question, candidates, idf)"
+   },
+   {
+    "file": "leaseapp/service.py",
+    "line": 58,
+    "quote": "hit = best is not None and best.score >= matcher.MATCH_THRESHOLD"
+   },
+   {
+    "file": "tests/test_mvp.py",
+    "line": 61,
+    "quote": "def test_saved_answer_matching(db, listing, question, expected):"
+   }
+  ]
+ },
+ "children": [
+  {
+   "id": "keywords-synonyms",
+   "name": "Key words and synonyms",
+   "one_liner": "Turns a question into a small set of canonical key words.",
+   "explain": "I lower-case a question and pull out its words. I drop filler words like 'the' and 'is' (the STOPWORDS list), and listing ids like A201. I fold variants into one canonical word using SYNONYMS, so dog, cats and animal all become pet. Car, garage and driveway all become parking. Words with no synonym get a light stem, which cuts a plural 's' or turns 'ies' into 'y'.",
+   "why": "Renters never phrase a question as a landlord saved it, so raw matching would miss 'can I park my car?' against 'Is parking available?'. Folding variants lets different wording land on the same word. Dropping filler keeps empty words from looking like a topic.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "keywords",
+     "detail": "Lower-cases, drops stopwords and listing ids, and maps each word to its canonical form."
+    },
+    {
+     "name": "STOPWORDS",
+     "detail": "Filler words such as a, the, is, can, my and please that are ignored."
+    },
+    {
+     "name": "SYNONYMS",
+     "detail": "Maps variants to one word, like dog and cats to pet or car and garage to parking."
+    },
+    {
+     "name": "LISTING_ID",
+     "detail": "A pattern for ids like A201 so they never count as a topic."
+    },
+    {
+     "name": "_stem",
+     "detail": "Trims a plural 's' or turns a trailing 'ies' into 'y'."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 63,
+     "quote": "def keywords(text: str) -> set[str]:"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 67,
+     "quote": "if w in STOPWORDS or LISTING_ID.match(w):"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 69,
+     "quote": "out.add(SYNONYMS.get(w, _stem(w)))"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 39,
+     "quote": "**dict.fromkeys([\"park\", \"parking\", \"car\", \"cars\", \"garage\", \"driveway\", \"spot\", \"spots\"], \"parking\"),"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 40,
+     "quote": "**dict.fromkeys([\"pet\", \"pets\", \"dog\", \"dogs\", \"cat\", \"cats\", \"animal\", \"animals\"], \"pet\"),"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 74,
+     "quote": "if len(w) > 4 and w.endswith(\"ies\"):"
+    }
+   ],
+   "svg": "keywords-synonyms.svg"
+  },
+  {
+   "id": "idf-weights",
+   "name": "Rarity weights (IDF)",
+   "one_liner": "Rare words count more than words every question uses.",
+   "explain": "I count, for every word, how many saved questions use it; that count is its document frequency (df). The weight is log((n+1)/(df+1)) + 1, where n is the number of saved questions. A word used by fewer questions weighs more: with the 23 demo questions, parking is 2.39 and rent 2.10. A word no saved question uses counts as rare, so it gets the biggest weight I have computed. I count over every landlord's saved questions, not just the one being asked.",
+   "why": "Without weights every shared word would count the same, and 'rent' or 'included' would drive a match as much as 'parking'. Weighting by rarity makes the distinctive topic word matter most. Unseen words count as rare so a renter's new word is never treated like filler.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "idf_weights",
+     "detail": "Builds the word-to-weight table from all saved questions."
+    },
+    {
+     "name": "df",
+     "detail": "A count of how many saved questions contain each word."
+    },
+    {
+     "name": "log((n+1)/(df+1)) + 1",
+     "detail": "The weight formula, always at least 1."
+    },
+    {
+     "name": "unseen",
+     "detail": "The largest weight in the table, used for a word no saved question has."
+    },
+    {
+     "name": "w",
+     "detail": "A small helper that adds up the weights of a set of words."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 7,
+     "quote": "2. Weight each word by how rare it is across all saved questions (IDF), so"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 8,
+     "quote": "\"parking\" counts more than \"rent\", which appears everywhere."
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 89,
+     "quote": "def idf_weights(all_saved_questions: list[str]) -> dict[str, float]:"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 95,
+     "quote": "return {w: math.log((n + 1) / (c + 1)) + 1 for w, c in df.items()}"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 104,
+     "quote": "unseen = max(idf.values(), default=1.0)  # a word no saved question uses counts as rare"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 55,
+     "quote": "idf = matcher.idf_weights([r[0] for r in conn.execute(\"SELECT question FROM saved_answers\")])"
+    }
+   ],
+   "svg": "idf-weights.svg"
+  },
+  {
+   "id": "overlap-coverage",
+   "name": "Overlap and coverage",
+   "one_liner": "Scores a pair of questions by overlap and coverage.",
+   "explain": "I score a renter's question against one saved question using the weights of their key words. Overlap is the shared weight divided by the weight of all words in either question. Coverage is the shared weight divided by the weight of the renter's words only. The score is the average of the two, 0.5 * (overlap + coverage). So a short question like 'can I park?' that a longer saved one fully covers still scores 0.68.",
+   "why": "Overlap alone punishes short questions: 'can I park?' shares one word with a long saved question, so overlap is small. Coverage fixes that by asking how much of the renter's own question the saved one explains. Averaging keeps a long saved question from matching on one lucky word.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "score",
+     "detail": "Compares one question with one saved question and returns a number from 0 to 1."
+    },
+    {
+     "name": "shared",
+     "detail": "The summed weight of words both questions contain."
+    },
+    {
+     "name": "overlap",
+     "detail": "Shared weight divided by the weight of the union of both word sets."
+    },
+    {
+     "name": "coverage",
+     "detail": "Shared weight divided by the weight of the renter's words."
+    },
+    {
+     "name": "0.5 * (...)",
+     "detail": "The plain average of overlap and coverage."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 9,
+     "quote": "3. Score = average of"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 10,
+     "quote": "overlap  = shared weight / weight of all words in either question"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 11,
+     "quote": "coverage = shared weight / weight of the renter's words"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 12,
+     "quote": "Coverage rewards short questions (\"can I park?\") that a longer saved"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 106,
+     "quote": "shared = w(q & s)"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 107,
+     "quote": "return 0.5 * (shared / w(q | s) + shared / w(q))"
+    }
+   ],
+   "svg": "overlap-coverage.svg"
+  },
+  {
+   "id": "topic-guard",
+   "name": "Topic-word guard",
+   "one_liner": "Requires a shared topic word, not just words like 'rent'.",
+   "explain": "I keep a short list of GENERIC words: include, rent, cost, allow, month, schedule and sign. A match needs at least one shared word that is not on that list, or I score it 0. This fixed a bug where 'is parking included in rent?' got the utilities answer, matching only on 'include' and 'rent'. It also stops 'is that allowed?' from matching 'are pets allowed?'. Two tests pin both cases: A201 and 'Is that allowed?'.",
+   "why": "A high score on common words is a false friend, because 'include' and 'rent' appear in many saved questions. Giving a renter the utilities answer to a parking question is a confident wrong answer, the worst failure here. Requiring a topic word makes the match mean something.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "GENERIC",
+     "detail": "The words that say little about the topic."
+    },
+    {
+     "name": "(q & s) - GENERIC",
+     "detail": "The shared words left after removing generic ones; if empty, the score is 0."
+    },
+    {
+     "name": "MATCH_CASES",
+     "detail": "The table of renter questions and the saved question each must hit, or None."
+    },
+    {
+     "name": "test_saved_answer_matching",
+     "detail": "Runs each case through ask_landlord and checks answered or not_answered."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 14,
+     "quote": "4. No match unless the two share a topic word (not one of GENERIC)."
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 25,
+     "quote": "# NOT in this set. Without it, \"is parking included in rent?\" matched the saved"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 28,
+     "quote": "GENERIC = {\"include\", \"rent\", \"cost\", \"allow\", \"month\", \"schedule\", \"sign\"}"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 102,
+     "quote": "if not (q & s) - GENERIC:  # no shared topic word"
+    },
+    {
+     "file": "tests/test_mvp.py",
+     "line": 49,
+     "quote": "(\"A201\", \"is parking included in rent?\", None),   # regression: matched the utilities answer on \"included rent\""
+    },
+    {
+     "file": "tests/test_mvp.py",
+     "line": 50,
+     "quote": "(\"A402\", \"Is that allowed?\", None),               # only filler words: must not match \"Are pets allowed?\""
+    }
+   ],
+   "svg": "topic-guard.svg"
+  },
+  {
+   "id": "fail-safe-threshold",
+   "name": "Fail-safe threshold",
+   "one_liner": "Below 0.5 I stay silent and offer to ask the landlord.",
+   "explain": "I answer only when the best score is at least MATCH_THRESHOLD, which is 0.5, and then I return the saved answer word for word. Below that I mark it not_answered, do not guess, and send it to the landlord only if the renter says yes. A score of 0.25 or more, the RELATED_FLOOR, also shows a related saved answer with a caution that it is not the same question. When two saved answers tie, the listing-specific one wins.",
+   "why": "A wrong answer about a deposit or a pet rule can mislead a renter, while a miss only costs a short wait for the landlord. So a miss fails safe and nothing is said as fact. The related answer carries a warning, so a near miss still helps without pretending to be the answer.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "MATCH_THRESHOLD",
+     "detail": "The 0.5 score at or above which the saved answer is returned."
+    },
+    {
+     "name": "RELATED_FLOOR",
+     "detail": "The 0.25 score at or above which a related answer is shown with a caution."
+    },
+    {
+     "name": "hit",
+     "detail": "True when the best match exists and its score reaches the threshold."
+    },
+    {
+     "name": "not_answered",
+     "detail": "The result below the threshold, with a next step that says do not guess."
+    },
+    {
+     "name": "ORDER BY listing_id IS NULL",
+     "detail": "Lists listing-specific answers first so they win a tie."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 22,
+     "quote": "MATCH_THRESHOLD = 0.5"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 10,
+     "quote": "RELATED_FLOOR = 0.25  # below the match cut-off but worth showing as \"related\""
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 49,
+     "quote": "# Listing-specific answers first, so they win a tie against the landlord-wide ones."
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 58,
+     "quote": "hit = best is not None and best.score >= matcher.MATCH_THRESHOLD"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 79,
+     "quote": "\"next_step\": \"Tell the renter the landlord has not answered this yet. Do not guess. Ask if they want \""
+    }
+   ],
+   "svg": "fail-safe-threshold.svg"
+  }
+ ]
+}

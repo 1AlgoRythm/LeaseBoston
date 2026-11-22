@@ -1,0 +1,2703 @@
+{
+ "slug": "leaseboston",
+ "title": "LeaseBoston: Apartment Search Inside Claude",
+ "repo": "https://github.com/1AlgoRythm/LeaseBoston",
+ "team": "solo",
+ "pitch": "I built LeaseBoston, an MCP server that brings apartment search into Claude and ChatGPT. Renters see ranked listings as cards in the chat and can ask a landlord anything. If the landlord already answered, the saved answer comes back word for word. If not, the renter can send the question with one click, and the landlord replies from an inbox. Every reply can be saved, so the next renter gets it instantly. It has 29 tests and a demo recorded live in Claude Desktop.",
+ "stack": [
+  "Python",
+  "MCP Python SDK 2.3.0 (MCPServer, Apps)",
+  "SQLite",
+  "Starlette",
+  "agent-desktop",
+  "ffmpeg"
+ ],
+ "archify": "architecture.html",
+ "archify_quality": "showcase",
+ "components": [
+  {
+   "id": "mcp-server",
+   "name": "MCP server",
+   "one_liner": "The single door Claude and ChatGPT use to reach LeaseBoston",
+   "explain": "I am the one MCP server, named leaseboston, that Claude or ChatGPT talks to. MCP, the Model Context Protocol, is a standard way for a chat app to call tools. I offer five tools: search_apartments, get_apartment, ask_landlord, send_question_to_landlord and check_landlord_reply. I run over stdin/stdout for Claude Desktop and Claude Code, or over HTTP at /mcp for ChatGPT. I also give the model a short instruction text that tells it how to behave.",
+   "why": "Every chat app sees only what I declare, so my tool types and instruction text decide whether the model behaves safely. Without my host check and transport choices, ChatGPT could not reach a laptop through a tunnel. Without the instructions, the model might guess a landlord's policy.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "mcp",
+     "detail": "The MCPServer object named leaseboston that holds the tools, the instructions and the card extension."
+    },
+    {
+     "name": "INSTRUCTIONS",
+     "detail": "The text the model reads about how to use the tools."
+    },
+    {
+     "name": "python -m leaseapp stdio | serve",
+     "detail": "The two ways to start the server, one per kind of chat app."
+    },
+    {
+     "name": "TransportSecuritySettings",
+     "detail": "The allow-list of host names and origins the HTTP server accepts."
+    },
+    {
+     "name": "apps = Apps()",
+     "detail": "The extension that ties two tools to the in-chat card."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 1,
+     "quote": "\"\"\"LeaseBoston's MCP server: what Claude or ChatGPT sees."
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 111,
+     "quote": "mcp = MCPServer(\"leaseboston\", title=\"LeaseBoston apartment search\", version=\"0.1.0\", instructions=INSTRUCTIONS,"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 25,
+     "quote": "INSTRUCTIONS = \"\"\"\\"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 55,
+     "quote": "apps = Apps()"
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 24,
+     "quote": "mcp.run()"
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 39,
+     "quote": "mcp.run(transport=\"streamable-http\", host=\"127.0.0.1\", port=a.port, json_response=True,"
+    }
+   ],
+   "sub": "mcp.html",
+   "sub_map": {
+    "transports": "transports",
+    "host-guard": "host-guard",
+    "server-instructions": "server-instructions",
+    "tool-contracts": "tool-contracts"
+   },
+   "children": [
+    {
+     "id": "transports",
+     "name": "Two transports",
+     "one_liner": "stdio for Claude, plain-JSON HTTP for ChatGPT",
+     "explain": "I can start in two ways. With the stdio command I talk over stdin and stdout, the text pipes of a process, which Claude Desktop and Claude Code use. With the serve command I listen on HTTP at /mcp, port 8000 unless you pick another, which ChatGPT reaches through a tunnel. I pass json_response=True, so each reply is one plain JSON body instead of an SSE stream, a long-lived stream of events. I do this because Cloudflare quick tunnels do not support SSE, and no tool of mine needs streaming.",
+     "why": "Claude and ChatGPT connect in different ways, so one server needs both doors. If I used a streaming reply, ChatGPT calls through the free Cloudflare tunnel would fail. Plain JSON works through the tunnel and costs nothing, because every tool answers in one shot.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "stdio",
+       "detail": "Subcommand that runs the server over stdin and stdout with mcp.run()."
+      },
+      {
+       "name": "serve",
+       "detail": "Subcommand that serves MCP at /mcp plus the landlord pages over HTTP."
+      },
+      {
+       "name": "--port",
+       "detail": "Chooses the HTTP port, default 8000."
+      },
+      {
+       "name": "--public-host",
+       "detail": "Names the tunnel hostname to accept, used for ChatGPT."
+      },
+      {
+       "name": "json_response=True",
+       "detail": "Makes each HTTP reply one plain JSON body instead of an SSE stream."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 14,
+       "quote": "sub.add_parser(\"stdio\", help=\"MCP over stdin/stdout, for Claude Desktop and Claude Code\")"
+      },
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 15,
+       "quote": "s = sub.add_parser(\"serve\", help=\"MCP at /mcp plus the landlord page, over HTTP\")"
+      },
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 17,
+       "quote": "s.add_argument(\"--public-host\", help=\"Tunnel hostname to accept, e.g. abc.trycloudflare.com (for ChatGPT)\")"
+      },
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 24,
+       "quote": "mcp.run()"
+      },
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 38,
+       "quote": "# Cloudflare quick tunnels do not support SSE, and no tool here needs streaming."
+      },
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 39,
+       "quote": "mcp.run(transport=\"streamable-http\", host=\"127.0.0.1\", port=a.port, json_response=True,"
+      }
+     ],
+     "svg": "transports.svg"
+    },
+    {
+     "id": "host-guard",
+     "name": "Host guard",
+     "one_liner": "Only localhost and the tunnel hostname may reach the server",
+     "explain": "The MCP SDK ships a guard against DNS rebinding, a trick where a web page points its own host name at your laptop. By default the guard answers only localhost, written as 127.0.0.1, localhost and [::1]. When I start with --public-host, I add that tunnel hostname, with and without a port, to allowed_hosts. I also add its https origin to allowed_origins, and --allow-origin can add more. Any other Host header is refused.",
+     "why": "A local server with no host check can be driven by a hostile web page open in the same browser. Opening it to one named tunnel host lets ChatGPT in without opening it to everyone. Without the flag, the tunnel's own host name would be refused.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "security = None",
+       "detail": "Keeps the SDK default, localhost only, when no public host is given."
+      },
+      {
+       "name": "local",
+       "detail": "The three localhost spellings that are always allowed: 127.0.0.1, localhost and [::1]."
+      },
+      {
+       "name": "allowed_hosts",
+       "detail": "Adds the public host, with and without a port, to the allowed host names."
+      },
+      {
+       "name": "allowed_origins",
+       "detail": "Adds the https origin of the public host and any --allow-origin values."
+      },
+      {
+       "name": "transport_security=security",
+       "detail": "Hands the settings to the HTTP server when it starts."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 26,
+       "quote": "security = None  # None = the SDK's default: localhost only"
+      },
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 28,
+       "quote": "local = [\"127.0.0.1:*\", \"localhost:*\", \"[::1]:*\"]"
+      },
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 29,
+       "quote": "security = TransportSecuritySettings("
+      },
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 30,
+       "quote": "allowed_hosts=local + [a.public_host, f\"{a.public_host}:*\"],"
+      },
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 31,
+       "quote": "allowed_origins=[\"http://127.0.0.1:*\", \"http://localhost:*\", f\"https://{a.public_host}\","
+      },
+      {
+       "file": "leaseapp/__main__.py",
+       "line": 40,
+       "quote": "transport_security=security)"
+      }
+     ],
+     "svg": "host-guard.svg"
+    },
+    {
+     "id": "server-instructions",
+     "name": "Server instructions",
+     "one_liner": "The short rulebook the model reads when it connects",
+     "explain": "I send the model a block of text called INSTRUCTIONS when it connects. It says to call ask_landlord with one question per call and never guess a landlord's policy. It says to call send_question_to_landlord only after the renter says a clear yes. It says landlords add answers over time, so the model should call ask_landlord again every time. When a card is shown, it keeps its own text short.",
+     "why": "The model follows these lines in every chat, so they are my cheapest safety rail. Without them it could invent a pet or deposit rule, or message a landlord unasked. Without the ask-again rule it would repeat an old not_answered result.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "INSTRUCTIONS",
+       "detail": "The constant that holds the whole rulebook as one string."
+      },
+      {
+       "name": "instructions=INSTRUCTIONS",
+       "detail": "Passes the text to MCPServer so the model receives it on connect."
+      },
+      {
+       "name": "status answered",
+       "detail": "Rule: give the landlord's saved answer word for word."
+      },
+      {
+       "name": "status not_answered",
+       "detail": "Rule: ask the renter first, and send only after a clear yes."
+      },
+      {
+       "name": "card rule",
+       "detail": "Rule: keep chat text short when a card already shows the details."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 25,
+       "quote": "INSTRUCTIONS = \"\"\"\\"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 35,
+       "quote": "with ONE question per call. Never guess a landlord's policy."
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 41,
+       "quote": "after the renter says yes. Never send without a clear yes."
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 43,
+       "quote": "- Landlords add answers over time. Call ask_landlord again every time a question is"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 49,
+       "quote": "Keep your own text short when a card is shown: the card already lists the details."
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 111,
+       "quote": "mcp = MCPServer(\"leaseboston\", title=\"LeaseBoston apartment search\", version=\"0.1.0\", instructions=INSTRUCTIONS,"
+      }
+     ],
+     "svg": "server-instructions.svg"
+    },
+    {
+     "id": "tool-contracts",
+     "name": "Tool contracts",
+     "one_liner": "Typed inputs and outputs the model can read and obey",
+     "explain": "I write each tool's inputs with Python types: Annotated, Field and Literal. The SDK turns them into JSON Schema, a machine-readable list of allowed values, such as min_beds from 0 to 6. Each tool returns dict[str, Any], which gives structured output. I mark search tools read-only and send_question_to_landlord idempotent, meaning a repeat does no extra harm. A fixable UserError becomes a ToolError the model can read, and two tools carry the ui:// card.",
+     "why": "The schema stops the model from sending a bad value, such as an unknown pet type. Readable errors let the model fix its own mistake and retry. The hints let the chat app treat a read-only search without a safety prompt.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "Annotated / Field / Literal",
+       "detail": "Declare the limits and allowed values of each input, such as limit between 1 and 10."
+      },
+      {
+       "name": "dict[str, Any]",
+       "detail": "The return type that gives the model structured output."
+      },
+      {
+       "name": "READ",
+       "detail": "Annotations marking a tool read-only; send_question_to_landlord sets its own idempotent hint."
+      },
+      {
+       "name": "user_errors",
+       "detail": "Wrapper that turns service.UserError into a ToolError message."
+      },
+      {
+       "name": "apps.tool",
+       "detail": "Decorator that binds search_apartments and ask_landlord to the card at ui://leaseboston/card.html."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 64,
+       "quote": "READ = ToolAnnotations(read_only_hint=True, open_world_hint=False)"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 68,
+       "quote": "\"\"\"Turn a fixable problem into a message the model can read and act on.\"\"\""
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 74,
+       "quote": "raise ToolError(str(e)) from e"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 78,
+       "quote": "@apps.tool(resource_uri=CARD, title=\"Search apartments\", annotations=READ)"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 90,
+       "quote": "limit: Annotated[int, Field(ge=1, le=10)] = 5,"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 124,
+       "quote": "idempotent_hint=True, open_world_hint=True))"
+      }
+     ],
+     "svg": "tool-contracts.svg"
+    }
+   ]
+  },
+  {
+   "id": "chat-card",
+   "name": "In-chat card (MCP App)",
+   "one_liner": "Search results and answers drawn as a card inside the chat",
+   "explain": "I show results inside the chat as a card, a small web page the host draws in a locked-down box called a sandboxed iframe. The page is one file, app.html, with no outside scripts or fonts, because the default security policy would block them. It talks to the host with JSON-RPC (small JSON request and reply messages) sent over postMessage, following the 2026-01-26 spec. The tool result picks the view: matches become a carousel, and a status becomes an answer or a consent form. Both search_apartments and ask_landlord point at this card, and other hosts just get the same data as text.",
+   "why": "Without a card, the renter would read long lists of listings as chat text. Keeping the card in one file with no network needs means it loads fast inside a sandbox. Hosts that ignore cards still work, because the same data comes back as text.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "app.html",
+     "detail": "The single page that holds the styles, the message plumbing and both views."
+    },
+    {
+     "name": "CARD",
+     "detail": "The ui:// address I register the page under, shared by two tools."
+    },
+    {
+     "name": "render",
+     "detail": "Picks the carousel or the answer view from the tool result's structuredContent."
+    },
+    {
+     "name": "listings",
+     "detail": "Draws the carousel view for search results."
+    },
+    {
+     "name": "answer",
+     "detail": "Draws the landlord's answer or the consent form."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 3,
+     "quote": "LeaseBoston's in-chat card (an MCP App). Claude Desktop draws this page in a sandboxed"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 4,
+     "quote": "iframe under the tool call and talks to it with JSON-RPC over postMessage"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 11,
+     "quote": "One page, two views, picked from the tool result's structuredContent:"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 144,
+     "quote": "} else if (sc.matches) listings(sc);"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 145,
+     "quote": "else if (sc.status) answer(sc);"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 56,
+     "quote": "CARD = \"ui://leaseboston/card.html\""
+    }
+   ],
+   "sub": "card.html",
+   "sub_map": {
+    "card-handshake": "card-handshake",
+    "card-carousel": "card-carousel",
+    "card-message": "card-message",
+    "card-consent": "card-consent"
+   },
+   "children": [
+    {
+     "id": "card-handshake",
+     "name": "Handshake with the host",
+     "svg": "card-handshake.svg",
+     "one_liner": "JSON-RPC messages over postMessage tell the host who I am",
+     "explain": "I talk to the host in JSON-RPC, small JSON envelopes with an id, a method and params, sent by window.parent.postMessage. Each request gets a number, and I park its resolve and reject callbacks in a pending map until the reply with that id arrives. On load I send ui/initialize with my app name, protocol version 2026-01-26 and empty capabilities, then ui/notifications/initialized once the host replies. The host pushes tool-input and tool-result notifications, and a ResizeObserver reports my size with size-changed whenever the page grows or shrinks. Any other host request, like a teardown or ping, gets an empty result back so the host never waits on me.",
+     "why": "Without the pending map, a reply could not be matched to the question that caused it. Without the initialize step, the host would not know the card is ready for results. Without size-changed, the iframe would stay the wrong height.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "request",
+       "detail": "Sends a JSON-RPC request and returns a promise stored in the pending map under its id."
+      },
+      {
+       "name": "pending",
+       "detail": "The map of waiting requests; a matching reply deletes its entry and resolves or rejects it."
+      },
+      {
+       "name": "notify",
+       "detail": "Sends a JSON-RPC message with no id, so no reply is expected."
+      },
+      {
+       "name": "ui/initialize",
+       "detail": "The first request, carrying appInfo, appCapabilities and protocolVersion 2026-01-26."
+      },
+      {
+       "name": "ResizeObserver",
+       "detail": "Sends ui/notifications/size-changed with the page's width and height."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 96,
+       "quote": "window.parent.postMessage({ jsonrpc: \"2.0\", id, method, params }, \"*\");"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 97,
+       "quote": "return new Promise((resolve, reject) => { pending[id] = { resolve, reject }; });"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 105,
+       "quote": "if (m.id !== undefined && !m.method && pending[m.id]) {           // a reply to our request"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 110,
+       "quote": "if (m.method === \"ui/notifications/tool-input\") toolInput = (m.params && m.params.arguments) || {};"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 119,
+       "quote": "request(\"ui/initialize\", { appInfo: { name: \"leaseboston-card\", version: \"0.2.0\" }, appCapabilities: {},"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 121,
+       "quote": ".then(() => notify(\"ui/notifications/initialized\", {}));"
+      }
+     ]
+    },
+    {
+     "id": "card-carousel",
+     "name": "Results carousel",
+     "svg": "card-carousel.svg",
+     "one_liner": "Matches and near misses scroll as snapping 248px tiles",
+     "explain": "When the tool result has matches, I draw a rail of tiles, each 248px wide, that snaps into place as the renter scrolls. Each tile shows a badge like N% match, the monthly rent, the title, and facts such as neighborhood, beds, baths and square feet. Under that I show the first two reasons with a check mark, then a pets chip and two amenity chips. Near-miss listings follow as Almost tiles that show why they missed, with a cross instead of a check. Under the rail, the ‹ and › buttons and a 1 / N counter show where I am.",
+     "why": "A tile has the same few facts every time, so the renter can compare listings by swiping instead of reading paragraphs. Showing near misses next to matches tells the renter which one filter to loosen. Setting text with textContent only means listing data can never be run as HTML.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "listings",
+       "detail": "Builds the rail, the counter and the two arrow buttons from the matches and near_misses."
+      },
+      {
+       "name": "tile",
+       "detail": "Builds one tile: badge, rent, title, facts, two reasons, chips and the ask buttons."
+      },
+      {
+       "name": ".tile",
+       "detail": "Fixes each tile at 248px with scroll-snap-align start."
+      },
+      {
+       "name": "rail scroll handler",
+       "detail": "Works out the tile number from scrollLeft and updates the 1 / N counter."
+      },
+      {
+       "name": "h",
+       "detail": "The small DOM helper that sets text only, so data is never parsed as HTML."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 38,
+       "quote": ".tile { flex: 0 0 248px; scroll-snap-align: start; background: #fff; border: 1px solid var(--line);"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 152,
+       "quote": "sc.matches.map((l) => tile(l, l.why_it_fits, `${l.fit_score}% match`, false)),"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 153,
+       "quote": "misses.map((l) => tile(l, l.why_not, \"Almost\", true)));"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 154,
+       "quote": "const count = h(\"span\", { class: \"muted\" }, `1 / ${n + misses.length}`);"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 179,
+       "quote": "h(\"ul\", { class: \"why\" }, (reasons || []).slice(0, 2).map((r) => h(\"li\", {}, r.replace(/^[\\d.]+ km from (.+) \\(about (\\d+) min walk, straight line\\)$/, \"~$2 min walk to $1\")))),"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 123,
+       "quote": "// ---------- tiny DOM helper (textContent only, so data is never parsed as HTML) ----------"
+      }
+     ]
+    },
+    {
+     "id": "card-message",
+     "name": "Ask landlord box",
+     "svg": "card-message.svg",
+     "one_liner": "The card asks the host to fill the renter's message box",
+     "explain": "Each tile has an Ask landlord button that swaps itself for a text box and an Ask button. When the renter presses Ask or Enter, I send the host a ui/message request with role user and a content array of one text part. The text reads Ask the landlord of the listing id, then the question the renter typed. The host puts that text in the renter's message box, and the renter presses send, so the renter keeps the last word. A blank question sends nothing, because I only submit when the trimmed text is not empty.",
+     "why": "If the card wrote straight to the landlord, a stray click could send a message the renter never reviewed. Going through the renter's own message box keeps a human yes in front of every question. The chat model then sees an ordinary user message and calls ask_landlord.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "say",
+       "detail": "Sends ui/message with role user and a content array of one text part."
+      },
+      {
+       "name": "submit",
+       "detail": "Sends the question only if the trimmed input is not empty."
+      },
+      {
+       "name": "Ask landlord button",
+       "detail": "Hides the buttons and shows the question box, then focuses it."
+      },
+      {
+       "name": "Details button",
+       "detail": "Uses the same say path to send Tell me more about the listing."
+      },
+      {
+       "name": "keydown handler",
+       "detail": "Lets the renter press Enter instead of clicking Ask."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 100,
+       "quote": "function say(text) { return request(\"ui/message\", { role: \"user\", content: [{ type: \"text\", text }] }); }"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 167,
+       "quote": "const q = h(\"input\", { placeholder: \"e.g. Is parking included?\" });"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 168,
+       "quote": "const submit = () => q.value.trim() && say(`Ask the landlord of ${l.id}: ${q.value.trim()}`);"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 169,
+       "quote": "q.addEventListener(\"keydown\", (e) => { if (e.key === \"Enter\") submit(); });"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 170,
+       "quote": "const ask = h(\"div\", { class: \"ask\" }, q, h(\"button\", { onclick: submit }, \"Ask\"));"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 172,
+       "quote": "h(\"button\", { onclick: () => { actions.style.display = \"none\"; ask.style.display = \"flex\"; q.focus(); } }, \"Ask landlord\"),"
+      }
+     ]
+    },
+    {
+     "id": "card-consent",
+     "name": "Consent form",
+     "svg": "card-consent.svg",
+     "one_liner": "The renter sends their own question to the landlord from the card",
+     "explain": "When the landlord has not answered, I show a form with the renter's name, a channel and a contact. The channel is email, text, app notification or chat only, and the contact hint changes to match, or disappears for chat only. When the renter presses Send, I check the name is filled, then call send_question_to_landlord myself with a tools/call request and the reference code. On success I swap the form for Sent to the landlord, with the reference and how the reply will arrive. Then I tell the chat with a ui/message, so Claude knows not to send it again.",
+     "why": "The renter's click on Send is the clear yes the server instructions require before anything reaches a landlord. Telling the chat afterward stops Claude from sending the same question a second time. A failed call re-enables the button and shows the error instead of losing the form.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "consentForm",
+       "detail": "Builds the name, channel and contact fields and the Send button."
+      },
+      {
+       "name": "consentToggle",
+       "detail": "On an answered card, hides the form behind a button reading Not quite it? Ask the landlord directly."
+      },
+      {
+       "name": "tools/call",
+       "detail": "The request that runs send_question_to_landlord with reference_code, renter_name, channel and contact."
+      },
+      {
+       "name": "sent banner",
+       "detail": "Replaces the form with the reference code and how_reply_arrives."
+      },
+      {
+       "name": "say",
+       "detail": "Posts a ui/message saying the renter sent the question from the card."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 212,
+       "quote": "const channel = h(\"select\", {}, [[\"email\", \"Email me\"], [\"sms\", \"Text me\"], [\"app\", \"LeaseBoston app notification\"],"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 217,
+       "quote": "contact.placeholder = { email: \"Email address\", sms: \"Phone number\", app: \"LeaseBoston username or email\" }[channel.value] || \"\";"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 224,
+       "quote": "const r = await request(\"tools/call\", { name: \"send_question_to_landlord\", arguments: {"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 229,
+       "quote": "form.replaceChildren(h(\"div\", { class: \"sent full\" }, h(\"b\", {}, \"✓ Sent to the landlord\"),"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 231,
+       "quote": "say(`I sent my question to the landlord myself from the card (reference ${sc.reference_code}).`);"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 48,
+       "quote": "card themselves; you will then see a message saying so. Do not send it again."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "question-lifecycle",
+   "name": "Question lifecycle",
+   "one_liner": "A reference code and four statuses carry each question to its answer",
+   "explain": "I give every landlord question a short reference code and a status, and the status shows where it stands. A question starts as auto_answered when a saved answer matched, or not_sent when none did. It becomes waiting once the renter says yes and I send it, then replied when the landlord answers. The landlord's reply can also be saved as a new answer, so the next renter asking the same thing gets it instantly.",
+   "why": "Each MCP call, one request from the model, arrives on its own, so the code and status are the only memory of a question. Without four clear statuses, I could not stop a double send or know when a reply is due.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "new_ref",
+     "detail": "Mints the Q plus five character code that names one question."
+    },
+    {
+     "name": "questions.status",
+     "detail": "Holds auto_answered, not_sent, waiting or replied for every question."
+    },
+    {
+     "name": "send_to_landlord",
+     "detail": "Moves a question to waiting and notifies the landlord and the renter."
+    },
+    {
+     "name": "check_reply",
+     "detail": "Reads a question's status by code and returns the reply once it exists."
+    },
+    {
+     "name": "landlord_reply",
+     "detail": "Stores the reply, sets replied, and can save it as a new answer."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/db.py",
+     "line": 45,
+     "quote": "status TEXT NOT NULL,   -- 'auto_answered' | 'not_sent' | 'waiting' | 'replied'"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 62,
+     "quote": "(ref, listing[\"id\"], lid, question, \"auto_answered\" if hit else \"not_sent\","
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 98,
+     "quote": "\"UPDATE questions SET status = 'waiting', renter_name = ?, channel = ?, contact = ?, sent_at = ?\""
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 119,
+     "quote": "def check_reply(ref: str) -> dict:"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 162,
+     "quote": "conn.execute(\"UPDATE questions SET status = 'replied', reply = ?, replied_at = ? WHERE ref = ?\","
+    }
+   ],
+   "sub": "lifecycle.html",
+   "sub_map": {
+    "reference-code": "reference-code",
+    "consent-gate": "consent-gate",
+    "idempotent-send": "idempotent-send",
+    "reply-becomes-answer": "reply-becomes-answer"
+   },
+   "children": [
+    {
+     "id": "reference-code",
+     "name": "Reference code",
+     "svg": "reference-code.svg",
+     "one_liner": "Each question gets a short readable code the model passes back",
+     "explain": "I mint a reference code as Q plus five random characters, drawn with Python's secrets module, which is meant for hard-to-predict picks. The five characters come from 31 symbols with no 0, O, 1, I or L, so a code reads aloud cleanly. Each MCP call arrives alone, so I return the code and the model passes it back as a plain argument. The code's status is one of four words: auto_answered, not_sent, waiting or replied.",
+     "why": "Nothing remembers an earlier call, so a later call needs a handle to name the question it means. Look-alike characters such as 0 and O would be misread when a code is spoken or typed. Redrawing a taken code keeps two questions from sharing one.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "new_ref",
+       "detail": "Builds Q plus five characters and retries while the code is already in the questions table."
+      },
+      {
+       "name": "alphabet",
+       "detail": "The 31 allowed symbols, with 0, O, 1, I and L left out."
+      },
+      {
+       "name": "_question",
+       "detail": "Finds a question by its code, trimmed and upper-cased, or raises a fixable error."
+      },
+      {
+       "name": "reference_code argument",
+       "detail": "The tool parameter the model fills with the code that ask_landlord returned."
+      },
+      {
+       "name": "questions.status",
+       "detail": "The four statuses a code can show: auto_answered, not_sent, waiting, replied."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/db.py",
+       "line": 118,
+       "quote": "alphabet = \"ABCDEFGHJKMNPQRSTUVWXYZ23456789\"  # no 0/O/1/I/L, easy to read aloud"
+      },
+      {
+       "file": "leaseapp/db.py",
+       "line": 120,
+       "quote": "ref = \"Q\" + \"\".join(secrets.choice(alphabet) for _ in range(5))"
+      },
+      {
+       "file": "leaseapp/db.py",
+       "line": 121,
+       "quote": "if not conn.execute(\"SELECT 1 FROM questions WHERE ref = ?\", (ref,)).fetchone():"
+      },
+      {
+       "file": "leaseapp/db.py",
+       "line": 45,
+       "quote": "status TEXT NOT NULL,   -- 'auto_answered' | 'not_sent' | 'waiting' | 'replied'"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 144,
+       "quote": "q = conn.execute(\"SELECT * FROM questions WHERE ref = ?\", (ref.strip().upper(),)).fetchone()"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 127,
+       "quote": "reference_code: Annotated[str, Field(description=\"From ask_landlord\")],"
+      }
+     ]
+    },
+    {
+     "id": "consent-gate",
+     "name": "Consent gate",
+     "svg": "consent-gate.svg",
+     "one_liner": "A question reaches the landlord only after the renter says yes",
+     "explain": "I want a question to reach the landlord only after the renter says yes, and two things carry that rule. First, my server instructions tell the model to call send_question_to_landlord only after a clear yes, and the tool's own description repeats it. Second, the in-chat card has a Send to landlord button, so the renter's own click is the yes. The honest limit is that the tool stays visible to the model, so a text-only host relies on the model obeying my words. Nothing inside send_to_landlord checks for a yes, so the gate is a rule I ask for, not a lock.",
+     "why": "Sending tells a real landlord by email, and nobody can unsend that. The card button makes consent a click the renter did, which is stronger than trusting the model. Where no card appears, only the instructions stand in the way, and I say so plainly.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "INSTRUCTIONS",
+       "detail": "Tells the model to send only after a clear yes and never to resend after a card send."
+      },
+      {
+       "name": "send_question_to_landlord",
+       "detail": "The tool whose description says to call it only after the renter clearly said yes."
+      },
+      {
+       "name": "consentForm",
+       "detail": "The card's form: name, channel, contact and a Send to landlord button that calls the tool."
+      },
+      {
+       "name": "tool registration",
+       "detail": "The tool is registered with no gate, so every host's model can see and call it."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 41,
+       "quote": "after the renter says yes. Never send without a clear yes."
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 134,
+       "quote": "ONLY call this after the renter has clearly said yes to sending it.\"\"\""
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 47,
+       "quote": "answers as LeaseBoston cards. The renter can send a question to the landlord from the"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 48,
+       "quote": "card themselves; you will then see a message saying so. Do not send it again."
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 224,
+       "quote": "const r = await request(\"tools/call\", { name: \"send_question_to_landlord\", arguments: {"
+      },
+      {
+       "file": "leaseapp/ui/app.html",
+       "line": 233,
+       "quote": "} }, \"Send to landlord\");"
+      }
+     ]
+    },
+    {
+     "id": "idempotent-send",
+     "name": "Idempotent send",
+     "svg": "idempotent-send.svg",
+     "one_liner": "Sending twice changes nothing: the second call returns the status",
+     "explain": "I check the contact first, and the rule depends on the channel the renter picked. Email must look like name@host.tld, sms needs at least 10 digits, and app needs a non-empty username or email. If the question is already waiting or replied, I return that status and send nothing, so a repeated call never sends twice. Otherwise I set the status to waiting, email the landlord, and send the renter a confirmation on their channel. For chat_only nothing goes to the renter, because that channel means they will check back in the chat.",
+     "why": "A model can call a tool twice, and both the card and the model may try to send the same question. Returning the stored status turns a repeat into a harmless no-op, so the landlord gets one email per question. The tool is also annotated idempotent, meaning repeating it has no extra effect.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "_check_contact",
+       "detail": "Rejects an unknown channel, a bad email, an sms number under 10 digits, or an empty app contact."
+      },
+      {
+       "name": "status guard",
+       "detail": "Returns the existing status with the note 'Already sent. Nothing sent twice.' for waiting or replied."
+      },
+      {
+       "name": "UPDATE questions",
+       "detail": "Sets status to waiting and stores the renter's name, channel, contact and sent time."
+      },
+      {
+       "name": "notify.send (landlord)",
+       "detail": "Emails the landlord the question and a link to the reply page."
+      },
+      {
+       "name": "notify.send (renter)",
+       "detail": "Sends the renter a confirmation with the reference code on their chosen channel."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/service.py",
+       "line": 91,
+       "quote": "_check_contact(channel, contact)"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 94,
+       "quote": "if q[\"status\"] in (\"waiting\", \"replied\"):"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 95,
+       "quote": "return {\"status\": q[\"status\"], \"reference_code\": q[\"ref\"], \"note\": \"Already sent. Nothing sent twice.\"}"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 98,
+       "quote": "\"UPDATE questions SET status = 'waiting', renter_name = ?, channel = ?, contact = ?, sent_at = ?\""
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 102,
+       "quote": "notify.send(conn, channel=\"email\", recipient=landlord[\"email\"], question_ref=q[\"ref\"],"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 106,
+       "quote": "notify.send(conn, channel=channel, recipient=contact, question_ref=q[\"ref\"],"
+      }
+     ]
+    },
+    {
+     "id": "reply-becomes-answer",
+     "name": "Reply becomes answer",
+     "svg": "reply-becomes-answer.svg",
+     "one_liner": "A landlord reply can be saved so later renters get it instantly",
+     "explain": "When the landlord replies, landlord_reply checks the question is waiting for that landlord, then stores the reply and sets the status to replied. The landlord can also save the reply as a saved answer, for this unit only or for all their units, marked with source from_reply. Then I notify the renter on the channel they chose, and they can also read it in chat with check_landlord_reply. The next renter's ask_landlord reads every saved answer for that landlord, so the saved reply matches instantly with no wait.",
+     "why": "Many renters ask a landlord the same things, so one slow reply can answer them all. Saving it turns that reply into an instant answer, and the landlord's queue shrinks over time. Without the save, each renter would wait for the same reply again.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "landlord_reply",
+       "detail": "Checks the question is waiting for this landlord, stores the reply and sets replied."
+      },
+      {
+       "name": "save_as",
+       "detail": "None, 'listing' for this unit only, or 'all' for every unit the landlord has."
+      },
+      {
+       "name": "_save_answer",
+       "detail": "Inserts a saved_answers row; here the source is from_reply."
+      },
+      {
+       "name": "notify.send (renter)",
+       "detail": "Messages the renter on their own channel; chat_only sends nothing."
+      },
+      {
+       "name": "ask_landlord candidates",
+       "detail": "Reads the landlord's saved answers, including saved replies, to match the next question."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/service.py",
+       "line": 159,
+       "quote": "if q[\"landlord_id\"] != landlord_id or q[\"status\"] != \"waiting\":"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 162,
+       "quote": "conn.execute(\"UPDATE questions SET status = 'replied', reply = ?, replied_at = ? WHERE ref = ?\","
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 164,
+       "quote": "if save_as in (\"listing\", \"all\"):"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 166,
+       "quote": "q[\"question\"], reply, \"from_reply\")"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 167,
+       "quote": "return notify.send(conn, channel=q[\"channel\"], recipient=q[\"contact\"] or \"\", question_ref=q[\"ref\"],"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 51,
+       "quote": "\"SELECT id, question, answer FROM saved_answers WHERE landlord_id = ?\""
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "answer-matcher",
+   "name": "Answer matcher",
+   "one_liner": "Finds the landlord's saved answer, or admits there is none.",
+   "explain": "I decide whether a landlord already answered a renter's question, using plain code with no AI model. That means the same question always gets the same result. I turn each question into key words, then weigh each word by how rare it is across all saved questions. I score a pair of questions as the average of overlap and coverage, and I require a shared topic word. At 0.5 or higher I return the saved answer word for word; below that I answer nothing and offer to ask the landlord.",
+   "why": "A confident wrong answer about a deposit or a pet rule can mislead a renter, so I only answer when the match is strong. Plain code gives the same result every time, which lets me pin each tricky case in a test. A miss just means a short wait for the landlord.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "keywords",
+     "detail": "Turns a question into a set of canonical key words."
+    },
+    {
+     "name": "idf_weights",
+     "detail": "Weights each word by how rare it is across saved questions."
+    },
+    {
+     "name": "score",
+     "detail": "Averages overlap and coverage, and returns 0 without a shared topic word."
+    },
+    {
+     "name": "best_match",
+     "detail": "Returns the top-scoring saved question, whatever its score."
+    },
+    {
+     "name": "ask_landlord",
+     "detail": "Applies the 0.5 cut-off and decides answered or not_answered."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 3,
+     "quote": "Plain code, no model: the same question always gives the same result."
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 22,
+     "quote": "MATCH_THRESHOLD = 0.5"
+    },
+    {
+     "file": "leaseapp/matcher.py",
+     "line": 110,
+     "quote": "def best_match(question: str, candidates: list[dict], idf: dict[str, float]) -> Match | None:"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 56,
+     "quote": "best = matcher.best_match(question, candidates, idf)"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 58,
+     "quote": "hit = best is not None and best.score >= matcher.MATCH_THRESHOLD"
+    },
+    {
+     "file": "tests/test_mvp.py",
+     "line": 61,
+     "quote": "def test_saved_answer_matching(db, listing, question, expected):"
+    }
+   ],
+   "sub": "matcher.html",
+   "sub_map": {
+    "keywords-synonyms": "keywords-synonyms",
+    "idf-weights": "idf-weights",
+    "overlap-coverage": "overlap-coverage",
+    "topic-guard": "topic-guard",
+    "fail-safe-threshold": "fail-safe-threshold"
+   },
+   "children": [
+    {
+     "id": "keywords-synonyms",
+     "name": "Key words and synonyms",
+     "one_liner": "Turns a question into a small set of canonical key words.",
+     "explain": "I lower-case a question and pull out its words. I drop filler words like 'the' and 'is' (the STOPWORDS list), and listing ids like A201. I fold variants into one canonical word using SYNONYMS, so dog, cats and animal all become pet. Car, garage and driveway all become parking. Words with no synonym get a light stem, which cuts a plural 's' or turns 'ies' into 'y'.",
+     "why": "Renters never phrase a question as a landlord saved it, so raw matching would miss 'can I park my car?' against 'Is parking available?'. Folding variants lets different wording land on the same word. Dropping filler keeps empty words from looking like a topic.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "keywords",
+       "detail": "Lower-cases, drops stopwords and listing ids, and maps each word to its canonical form."
+      },
+      {
+       "name": "STOPWORDS",
+       "detail": "Filler words such as a, the, is, can, my and please that are ignored."
+      },
+      {
+       "name": "SYNONYMS",
+       "detail": "Maps variants to one word, like dog and cats to pet or car and garage to parking."
+      },
+      {
+       "name": "LISTING_ID",
+       "detail": "A pattern for ids like A201 so they never count as a topic."
+      },
+      {
+       "name": "_stem",
+       "detail": "Trims a plural 's' or turns a trailing 'ies' into 'y'."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 63,
+       "quote": "def keywords(text: str) -> set[str]:"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 67,
+       "quote": "if w in STOPWORDS or LISTING_ID.match(w):"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 69,
+       "quote": "out.add(SYNONYMS.get(w, _stem(w)))"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 39,
+       "quote": "**dict.fromkeys([\"park\", \"parking\", \"car\", \"cars\", \"garage\", \"driveway\", \"spot\", \"spots\"], \"parking\"),"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 40,
+       "quote": "**dict.fromkeys([\"pet\", \"pets\", \"dog\", \"dogs\", \"cat\", \"cats\", \"animal\", \"animals\"], \"pet\"),"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 74,
+       "quote": "if len(w) > 4 and w.endswith(\"ies\"):"
+      }
+     ],
+     "svg": "keywords-synonyms.svg"
+    },
+    {
+     "id": "idf-weights",
+     "name": "Rarity weights (IDF)",
+     "one_liner": "Rare words count more than words every question uses.",
+     "explain": "I count, for every word, how many saved questions use it; that count is its document frequency (df). The weight is log((n+1)/(df+1)) + 1, where n is the number of saved questions. A word used by fewer questions weighs more: with the 23 demo questions, parking is 2.39 and rent 2.10. A word no saved question uses counts as rare, so it gets the biggest weight I have computed. I count over every landlord's saved questions, not just the one being asked.",
+     "why": "Without weights every shared word would count the same, and 'rent' or 'included' would drive a match as much as 'parking'. Weighting by rarity makes the distinctive topic word matter most. Unseen words count as rare so a renter's new word is never treated like filler.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "idf_weights",
+       "detail": "Builds the word-to-weight table from all saved questions."
+      },
+      {
+       "name": "df",
+       "detail": "A count of how many saved questions contain each word."
+      },
+      {
+       "name": "log((n+1)/(df+1)) + 1",
+       "detail": "The weight formula, always at least 1."
+      },
+      {
+       "name": "unseen",
+       "detail": "The largest weight in the table, used for a word no saved question has."
+      },
+      {
+       "name": "w",
+       "detail": "A small helper that adds up the weights of a set of words."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 7,
+       "quote": "2. Weight each word by how rare it is across all saved questions (IDF), so"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 8,
+       "quote": "\"parking\" counts more than \"rent\", which appears everywhere."
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 89,
+       "quote": "def idf_weights(all_saved_questions: list[str]) -> dict[str, float]:"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 95,
+       "quote": "return {w: math.log((n + 1) / (c + 1)) + 1 for w, c in df.items()}"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 104,
+       "quote": "unseen = max(idf.values(), default=1.0)  # a word no saved question uses counts as rare"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 55,
+       "quote": "idf = matcher.idf_weights([r[0] for r in conn.execute(\"SELECT question FROM saved_answers\")])"
+      }
+     ],
+     "svg": "idf-weights.svg"
+    },
+    {
+     "id": "overlap-coverage",
+     "name": "Overlap and coverage",
+     "one_liner": "Scores a pair of questions by overlap and coverage.",
+     "explain": "I score a renter's question against one saved question using the weights of their key words. Overlap is the shared weight divided by the weight of all words in either question. Coverage is the shared weight divided by the weight of the renter's words only. The score is the average of the two, 0.5 * (overlap + coverage). So a short question like 'can I park?' that a longer saved one fully covers still scores 0.68.",
+     "why": "Overlap alone punishes short questions: 'can I park?' shares one word with a long saved question, so overlap is small. Coverage fixes that by asking how much of the renter's own question the saved one explains. Averaging keeps a long saved question from matching on one lucky word.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "score",
+       "detail": "Compares one question with one saved question and returns a number from 0 to 1."
+      },
+      {
+       "name": "shared",
+       "detail": "The summed weight of words both questions contain."
+      },
+      {
+       "name": "overlap",
+       "detail": "Shared weight divided by the weight of the union of both word sets."
+      },
+      {
+       "name": "coverage",
+       "detail": "Shared weight divided by the weight of the renter's words."
+      },
+      {
+       "name": "0.5 * (...)",
+       "detail": "The plain average of overlap and coverage."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 9,
+       "quote": "3. Score = average of"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 10,
+       "quote": "overlap  = shared weight / weight of all words in either question"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 11,
+       "quote": "coverage = shared weight / weight of the renter's words"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 12,
+       "quote": "Coverage rewards short questions (\"can I park?\") that a longer saved"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 106,
+       "quote": "shared = w(q & s)"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 107,
+       "quote": "return 0.5 * (shared / w(q | s) + shared / w(q))"
+      }
+     ],
+     "svg": "overlap-coverage.svg"
+    },
+    {
+     "id": "topic-guard",
+     "name": "Topic-word guard",
+     "one_liner": "Requires a shared topic word, not just words like 'rent'.",
+     "explain": "I keep a short list of GENERIC words: include, rent, cost, allow, month, schedule and sign. A match needs at least one shared word that is not on that list, or I score it 0. This fixed a bug where 'is parking included in rent?' got the utilities answer, matching only on 'include' and 'rent'. It also stops 'is that allowed?' from matching 'are pets allowed?'. Two tests pin both cases: A201 and 'Is that allowed?'.",
+     "why": "A high score on common words is a false friend, because 'include' and 'rent' appear in many saved questions. Giving a renter the utilities answer to a parking question is a confident wrong answer, the worst failure here. Requiring a topic word makes the match mean something.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "GENERIC",
+       "detail": "The words that say little about the topic."
+      },
+      {
+       "name": "(q & s) - GENERIC",
+       "detail": "The shared words left after removing generic ones; if empty, the score is 0."
+      },
+      {
+       "name": "MATCH_CASES",
+       "detail": "The table of renter questions and the saved question each must hit, or None."
+      },
+      {
+       "name": "test_saved_answer_matching",
+       "detail": "Runs each case through ask_landlord and checks answered or not_answered."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 14,
+       "quote": "4. No match unless the two share a topic word (not one of GENERIC)."
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 25,
+       "quote": "# NOT in this set. Without it, \"is parking included in rent?\" matched the saved"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 28,
+       "quote": "GENERIC = {\"include\", \"rent\", \"cost\", \"allow\", \"month\", \"schedule\", \"sign\"}"
+      },
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 102,
+       "quote": "if not (q & s) - GENERIC:  # no shared topic word"
+      },
+      {
+       "file": "tests/test_mvp.py",
+       "line": 49,
+       "quote": "(\"A201\", \"is parking included in rent?\", None),   # regression: matched the utilities answer on \"included rent\""
+      },
+      {
+       "file": "tests/test_mvp.py",
+       "line": 50,
+       "quote": "(\"A402\", \"Is that allowed?\", None),               # only filler words: must not match \"Are pets allowed?\""
+      }
+     ],
+     "svg": "topic-guard.svg"
+    },
+    {
+     "id": "fail-safe-threshold",
+     "name": "Fail-safe threshold",
+     "one_liner": "Below 0.5 I stay silent and offer to ask the landlord.",
+     "explain": "I answer only when the best score is at least MATCH_THRESHOLD, which is 0.5, and then I return the saved answer word for word. Below that I mark it not_answered, do not guess, and send it to the landlord only if the renter says yes. A score of 0.25 or more, the RELATED_FLOOR, also shows a related saved answer with a caution that it is not the same question. When two saved answers tie, the listing-specific one wins.",
+     "why": "A wrong answer about a deposit or a pet rule can mislead a renter, while a miss only costs a short wait for the landlord. So a miss fails safe and nothing is said as fact. The related answer carries a warning, so a near miss still helps without pretending to be the answer.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "MATCH_THRESHOLD",
+       "detail": "The 0.5 score at or above which the saved answer is returned."
+      },
+      {
+       "name": "RELATED_FLOOR",
+       "detail": "The 0.25 score at or above which a related answer is shown with a caution."
+      },
+      {
+       "name": "hit",
+       "detail": "True when the best match exists and its score reaches the threshold."
+      },
+      {
+       "name": "not_answered",
+       "detail": "The result below the threshold, with a next step that says do not guess."
+      },
+      {
+       "name": "ORDER BY listing_id IS NULL",
+       "detail": "Lists listing-specific answers first so they win a tie."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/matcher.py",
+       "line": 22,
+       "quote": "MATCH_THRESHOLD = 0.5"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 10,
+       "quote": "RELATED_FLOOR = 0.25  # below the match cut-off but worth showing as \"related\""
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 49,
+       "quote": "# Listing-specific answers first, so they win a tie against the landlord-wide ones."
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 58,
+       "quote": "hit = best is not None and best.score >= matcher.MATCH_THRESHOLD"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 79,
+       "quote": "\"next_step\": \"Tell the renter the landlord has not answered this yet. Do not guess. Ask if they want \""
+      }
+     ],
+     "svg": "fail-safe-threshold.svg"
+    }
+   ]
+  },
+  {
+   "id": "search-ranking",
+   "name": "Search & ranking",
+   "one_liner": "Filters out what cannot work, then scores and ranks the rest.",
+   "explain": "I take the renter's filters and every listing, and first drop the ones that cannot work, such as a rent over budget. Each survivor gets a fit score from 0 to 100, built from budget, commute distance and extras, with a plain reason per part. I sort by score, highest first, break ties with the lower rent, and return up to the limit, which defaults to 5. If fewer places fit than the limit, I also show listings that fail exactly one filter, so the renter knows what to loosen. Every search records an impression, a note that a listing was shown, for each match I return.",
+   "why": "Hard filters keep impossible places away from the renter, and the score puts the best fit first. Plain reasons let the AI explain why a place fits instead of guessing. Near misses stop a strict search from ending in an empty answer.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "rank",
+     "detail": "Splits listings into fits and misses, scores the fits, sorts them and adds near misses."
+    },
+    {
+     "name": "why_not",
+     "detail": "Lists, in words, every hard filter a listing fails; an empty list means it passes."
+    },
+    {
+     "name": "score",
+     "detail": "Combines the budget, commute and extras parts into one 0-100 number with reasons."
+    },
+    {
+     "name": "km_between",
+     "detail": "Straight-line distance in kilometres between two latitude and longitude points."
+    },
+    {
+     "name": "search",
+     "detail": "The service call that loads listings, runs rank and logs an impression per match."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 3,
+     "quote": "Hard filters remove what cannot work (over budget, too few bedrooms, no pets,"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 70,
+     "quote": "def rank(listings: list[dict], f: dict, limit: int) -> dict:"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 79,
+     "quote": "fits.sort(key=lambda x: (-x[\"fit_score\"], x[\"rent\"]))"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 81,
+     "quote": "if len(fits) < limit:  # say what nearly fit, so the renter can loosen a filter"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 19,
+     "quote": "def search(filters: dict, limit: int = 5) -> dict:"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 24,
+     "quote": "\"INSERT INTO impressions VALUES (?, ?)\", [(m[\"id\"], now()) for m in result[\"matches\"]]"
+    }
+   ],
+   "sub": "search.html",
+   "sub_map": {
+    "hard-filters": "hard-filters",
+    "fit-score": "fit-score",
+    "commute-distance": "commute-distance",
+    "near-misses": "near-misses"
+   },
+   "children": [
+    {
+     "id": "hard-filters",
+     "name": "Hard filters",
+     "one_liner": "Says in words which must-haves a listing fails.",
+     "explain": "I check each listing against six filters: rent, bedrooms, pets, move-in date, must-have amenities and chosen neighborhoods. Every failed filter becomes a short sentence, such as a dollar amount over budget, or the list of missing amenities. For pets I use a small table, PET_OK, that says which listing policies suit a renter with no pet, a cat or a dog. An empty list means the listing passes, and I only score listings that come back empty.",
+     "why": "Filters that fail in words let me show near misses and tell the renter exactly why a place was dropped. A silent yes or no would hide the one thing worth loosening. A listing that breaks a hard rule must never be scored as a good fit.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "why_not",
+       "detail": "Returns a list of failed-filter sentences; empty means the listing passes."
+      },
+      {
+       "name": "PET_OK",
+       "detail": "Maps the renter's pet (none, cat, dog) to the listing policies that allow it."
+      },
+      {
+       "name": "max_rent check",
+       "detail": "Reports the dollars a listing is over the renter's maximum rent."
+      },
+      {
+       "name": "must_have check",
+       "detail": "Collects the required amenities the listing lacks into one 'missing' sentence."
+      },
+      {
+       "name": "neighborhoods check",
+       "detail": "Rejects a listing outside the chosen areas, ignoring upper or lower case."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 30,
+       "quote": "def why_not(listing: dict, f: dict) -> list[str]:"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 31,
+       "quote": "\"\"\"Hard-filter failures, in words. Empty list = passes.\"\"\""
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 27,
+       "quote": "PET_OK = {\"none\": {\"none\", \"cats\", \"cats_and_dogs\"}, \"cat\": {\"cats\", \"cats_and_dogs\"}, \"dog\": {\"cats_and_dogs\"}}"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 34,
+       "quote": "out.append(f\"${listing['rent'] - f['max_rent']} over budget\")"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 43,
+       "quote": "out.append(\"missing \" + \", \".join(missing))"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 40,
+       "quote": "out.append(f\"not free until {listing['available_from']}\")"
+      }
+     ],
+     "svg": "hard-filters.svg"
+    },
+    {
+     "id": "fit-score",
+     "name": "Fit score",
+     "one_liner": "Averages budget, commute and extras into a 0-100 score.",
+     "explain": "I score a listing with up to three parts, each between 0 and 1: budget fit, commute, and share of nice-to-have extras. Budget and commute each weigh 0.4 and extras weigh 0.2; I average only over the parts the renter actually asked about. The budget part reaches full marks when the rent is 25% under the maximum, and each part writes its own plain reason. I multiply the average by 100 and round it; with no parts at all I return 50 and 'matches your filters'.",
+     "why": "Weights let a close, affordable place beat one that only has a long amenity list. Averaging only the parts that apply keeps a renter who skipped commute from being punished. The plain reasons are what lets the AI say why a place fits.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "score",
+       "detail": "Builds the weighted parts and reasons, then returns a rounded 0-100 number and the list of reasons."
+      },
+      {
+       "name": "budget part",
+       "detail": "Weight 0.4; capped at 1.0 once the rent is 25% under the maximum."
+      },
+      {
+       "name": "commute part",
+       "detail": "Weight 0.4; one minus the kilometres divided by 5, never below 0."
+      },
+      {
+       "name": "extras part",
+       "detail": "Weight 0.2; the share of nice-to-have amenities the listing has."
+      },
+      {
+       "name": "no-parts default",
+       "detail": "Returns 50 when the renter gave nothing to score on."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 7,
+       "quote": "budget   (weight 0.4)  more room under the max rent is better, full marks at 25% under"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 11,
+       "quote": "Each part also writes a plain reason, so the AI can say WHY a place fits."
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 53,
+       "quote": "parts.append((0.4, min(1.0, under / (0.25 * f[\"max_rent\"]))))"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 57,
+       "quote": "parts.append((0.4, max(0.0, 1 - km / 5)))"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 61,
+       "quote": "parts.append((0.2, len(have) / len(f[\"nice_to_have\"])))"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 67,
+       "quote": "return round(100 * sum(w * s for w, s in parts) / total), reasons"
+      }
+     ],
+     "svg": "fit-score.svg"
+    },
+    {
+     "id": "commute-distance",
+     "name": "Commute distance",
+     "one_liner": "Straight-line kilometres to a landmark, turned into a score.",
+     "explain": "I measure the straight-line distance between a listing and a named landmark with the haversine formula, which treats Earth as a sphere. I use an Earth radius of 6371 km and real landmark coordinates that were looked up in Apple Maps. The commute score is 1 minus the distance divided by 5 km, so full marks at 0 km and zero from 5 km on. For the reason I also give walking minutes at 80 metres a minute, and I label it a straight line, not a route.",
+     "why": "A straight line needs no routing service, so the demo works offline and gives the same answer every time. Labelling it a straight line keeps me from promising a walking route I did not compute. Real coordinates keep the distances believable.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "km_between",
+       "detail": "Haversine distance in kilometres between two latitude and longitude points."
+      },
+      {
+       "name": "LANDMARKS",
+       "detail": "Named places such as Northeastern University and MIT, each with real coordinates."
+      },
+      {
+       "name": "WALK_M_PER_MIN",
+       "detail": "80 metres per minute, about 5 km/h, used to turn kilometres into walking minutes."
+      },
+      {
+       "name": "commute part",
+       "detail": "Computes 1 - km / 5, clamped at 0, with weight 0.4 in the fit score."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 18,
+       "quote": "WALK_M_PER_MIN = 80  # about 5 km/h"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 24,
+       "quote": "return 2 * 6371 * math.asin(math.sqrt(h))"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 8,
+       "quote": "commute  (weight 0.4)  straight-line distance to the place they named; full at 0 km, zero at 5 km"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 58,
+       "quote": "reasons.append(f\"{km:.1f} km from {f['near']} (about {round(km * 1000 / WALK_M_PER_MIN)} min walk, straight line)\")"
+      },
+      {
+       "file": "leaseapp/seed_data.py",
+       "line": 9,
+       "quote": "# Real coordinates (Apple Maps, 2026-11-21)."
+      },
+      {
+       "file": "leaseapp/seed_data.py",
+       "line": 23,
+       "quote": "\"Northeastern University\": (42.3398247, -71.0880961),"
+      }
+     ],
+     "svg": "commute-distance.svg"
+    },
+    {
+     "id": "near-misses",
+     "name": "Near misses",
+     "one_liner": "Shows listings that fail just one filter, with the reason.",
+     "explain": "When fewer listings fit than the limit, I look at the listings that were dropped and keep those that fail exactly one filter. I sort them by fewest failures, then lower rent, and fill only the empty spots up to the limit. Each near miss comes with why_not, the failed filter in words, so the renter learns which single filter to loosen. Separately, search writes an impression row, a record that a listing was shown, for every match I return.",
+     "why": "A strict search that returns nothing leaves the renter stuck. One named filter to loosen is an easy next step. Logging impressions records what was shown, without storing anything about the renter.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "near_misses",
+       "detail": "The result list of near-miss cards, each with a why_not list."
+      },
+      {
+       "name": "one_off",
+       "detail": "Keeps only misses with exactly one failed filter."
+      },
+      {
+       "name": "limit - len(fits)",
+       "detail": "Caps the near misses so matches plus near misses never exceed the limit."
+      },
+      {
+       "name": "impressions insert",
+       "detail": "Search writes one row per match with its id and the time."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 81,
+       "quote": "if len(fits) < limit:  # say what nearly fit, so the renter can loosen a filter"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 83,
+       "quote": "one_off = [(l, fails) for n, l, fails in misses if n == 1]  # fails exactly one filter"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 84,
+       "quote": "result[\"near_misses\"] = [{**_card(l), \"why_not\": fails} for l, fails in one_off[: limit - len(fits)]]"
+      },
+      {
+       "file": "leaseapp/ranking.py",
+       "line": 82,
+       "quote": "misses.sort(key=lambda m: (m[0], m[1][\"rent\"]))"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 24,
+       "quote": "\"INSERT INTO impressions VALUES (?, ?)\", [(m[\"id\"], now()) for m in result[\"matches\"]]"
+      }
+     ],
+     "svg": "near-misses.svg"
+    }
+   ]
+  },
+  {
+   "id": "landlord-inbox",
+   "name": "Landlord inbox",
+   "one_liner": "The landlord's local web page for answering renter questions",
+   "explain": "I am the landlord's side of LeaseBoston: plain web pages, served by the same server as /mcp, where renter questions arrive. I answer only when the request's Host header, the website name the browser asked for, is localhost, 127.0.0.1 or [::1]. My Inbox tab shows four count tiles and every question, and my Saved answers tab holds the replies renters get instantly. My buttons call service.landlord_reply and service.add_saved_answer, so I hold no business rules myself.",
+   "why": "I stay local because the page shows renters' contact details and has no login yet, so a public tunnel for ChatGPT exposes only /mcp. Keeping the rules in service.py means the chat tools and this page can never disagree about what a reply or a saved answer does.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "local_only",
+     "detail": "Wraps every landlord route and refuses a non-local Host with a 403."
+    },
+    {
+     "name": "inbox",
+     "detail": "Builds the stat tiles, the question list and the open question for one landlord."
+    },
+    {
+     "name": "answers",
+     "detail": "Builds the Saved answers tab: add form, saved list and units table."
+    },
+    {
+     "name": "reply",
+     "detail": "Takes the reply form post and hands it to service.landlord_reply."
+    },
+    {
+     "name": "add_saved",
+     "detail": "Takes the add-answer form post and hands it to service.add_saved_answer."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 4,
+     "quote": "on localhost, so a public tunnel for ChatGPT exposes /mcp but never this page"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 5,
+     "quote": "(it shows renters' contact details and has no login yet)."
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 1,
+     "quote": "\"\"\"The rules, in one place. The MCP tools and the landlord page both call these.\"\"\""
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 227,
+     "quote": "service.landlord_reply(lid, ref, f.get(\"reply\", \"\"), save_as)"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 239,
+     "quote": "service.add_saved_answer(lid, f.get(\"listing_id\") or None, f.get(\"question\", \"\"), f.get(\"answer\", \"\"))"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 68,
+     "quote": "def local_only(handler):"
+    }
+   ],
+   "sub": "inbox.html",
+   "sub_map": {
+    "localhost-only": "localhost-only",
+    "inbox-states": "inbox-states",
+    "inbox-stats": "inbox-stats",
+    "saved-answers": "saved-answers"
+   },
+   "children": [
+    {
+     "id": "localhost-only",
+     "name": "Localhost only",
+     "one_liner": "Refuses any request whose Host is not localhost",
+     "explain": "I read the Host header, the website name the browser asked for, on every landlord page request. If it is not 127.0.0.1, localhost or [::1], I answer 403, which means forbidden, with a one-line refusal. I wrap all seven landlord routes with local_only, so the inbox, saved answers, reply forms and outbox share one check. A public tunnel for ChatGPT therefore exposes /mcp but never the page that shows renters' contact details. There is no login yet, so this check is the only guard.",
+     "why": "Without it, a tunnel meant to give ChatGPT the /mcp endpoint would also publish renters' names, emails and phone numbers. Because there is no login yet, a host check is the cheapest guard, and it refuses by default.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "LOCAL_HOSTS",
+       "detail": "The three names counted as local: 127.0.0.1, localhost and [::1]."
+      },
+      {
+       "name": "local_only",
+       "detail": "A decorator, meaning a wrapper, that runs the Host check before the real handler."
+      },
+      {
+       "name": "rsplit(\":\", 1)[0]",
+       "detail": "Cuts the port off the Host header so localhost:8000 still counts as localhost."
+      },
+      {
+       "name": "status_code=403",
+       "detail": "The refusal a non-local Host gets, with the text 'only available on localhost'."
+      },
+      {
+       "name": "@local_only",
+       "detail": "Stacked under each @mcp.custom_route so every page gets the check."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 4,
+       "quote": "on localhost, so a public tunnel for ChatGPT exposes /mcp but never this page"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 5,
+       "quote": "(it shows renters' contact details and has no login yet)."
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 21,
+       "quote": "LOCAL_HOSTS = {\"127.0.0.1\", \"localhost\", \"[::1]\"}"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 70,
+       "quote": "if request.headers.get(\"host\", \"\").rsplit(\":\", 1)[0] not in LOCAL_HOSTS:"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 71,
+       "quote": "return PlainTextResponse(\"The landlord page is only available on localhost.\", status_code=403)"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 108,
+       "quote": "@local_only"
+      }
+     ],
+     "svg": "localhost-only.svg"
+    },
+    {
+     "id": "inbox-states",
+     "name": "Inbox and its four states",
+     "one_liner": "Lists every question, waiting first, with a detail view per status",
+     "explain": "I list every question for the landlord, waiting ones first, then the newest, each with a coloured status dot. The dots are amber for waiting, green for replied, blue for auto-answered and grey for not sent. The open question shows the listing, plus the renter and their reply channel (how they want to hear back) once it was sent. Under it, waiting gets a reply box, and replied shows the reply that was sent. Auto-answered shows the matched saved answer and its score, and not sent shows a form to add an answer.",
+     "why": "Waiting first means a renter who is actually blocked is never buried under finished questions. Each status needs a different action, so showing only that action avoids a reply box on a question already answered. The score lets the landlord judge whether the saved answer really fitted.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "STATUS",
+       "detail": "Maps the four status codes to the labels the landlord reads."
+      },
+      {
+       "name": "ORDER BY q.status = 'waiting' DESC",
+       "detail": "Puts waiting questions first, then sorts by newest asked_at."
+      },
+      {
+       "name": ".dot classes",
+       "detail": "One CSS class per status gives each list dot its colour."
+      },
+      {
+       "name": "detail",
+       "detail": "Picks the panel under the open question from its status."
+      },
+      {
+       "name": "match_score",
+       "detail": "The matcher's score, shown beside the saved answer that auto-answered the question."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 42,
+       "quote": ".waiting{background:var(--amber)}.replied{background:var(--green)}.auto_answered{background:var(--blue)}.not_sent{background:#B9B4AC}"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 138,
+       "quote": "\" WHERE q.landlord_id = ? ORDER BY q.status = 'waiting' DESC, q.asked_at DESC\", (lid,)).fetchall()"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 170,
+       "quote": "if q[\"status\"] == \"waiting\":"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 178,
+       "quote": "elif q[\"status\"] == \"replied\":"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 180,
+       "quote": "elif q[\"status\"] == \"auto_answered\":"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 182,
+       "quote": "f\"(match {q['match_score']})</div>{e(q['matched_a'])}</div>\")"
+      }
+     ],
+     "svg": "inbox-states.svg"
+    },
+    {
+     "id": "inbox-stats",
+     "name": "Inbox stat tiles",
+     "one_liner": "Four tiles: waiting, auto-answered, not sent, search views",
+     "explain": "I show four number tiles above the inbox: waiting for you, auto-answered, asked-not-sent and search views. I count the first three in Python from the question list I already fetched, so only the views number needs its own query. Search views counts rows in the impressions table, which logs each time a listing showed up in a renter's search results. I join those rows to this landlord's listings, so a search that shows three of their units adds three views.",
+     "why": "The tiles tell a landlord what needs them now before they open a single question. Search views add context the questions cannot give, namely whether renters are seeing the units at all.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "count",
+       "detail": "A small lambda that counts the landlord's questions with one given status."
+      },
+      {
+       "name": "views",
+       "detail": "A COUNT of impressions joined to the listings this landlord owns."
+      },
+      {
+       "name": "impressions",
+       "detail": "One row per listing shown in a search, written by service.search."
+      },
+      {
+       "name": ".stats",
+       "detail": "A four-column grid for the tiles, two columns on a narrow screen."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 139,
+       "quote": "views = conn.execute(\"SELECT COUNT(*) FROM impressions i JOIN listings l ON l.id = i.listing_id\""
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 140,
+       "quote": "\" WHERE l.landlord_id = ?\", (lid,)).fetchone()[0]"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 141,
+       "quote": "count = lambda st: sum(q[\"status\"] == st for q in qs)"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 144,
+       "quote": "f\"<div class=stat><b>{count('not_sent')}</b><span>asked, not sent</span></div>\""
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 145,
+       "quote": "f\"<div class=stat><b>{views}</b><span>search views</span></div></div>\")"
+      },
+      {
+       "file": "leaseapp/service.py",
+       "line": 24,
+       "quote": "\"INSERT INTO impressions VALUES (?, ?)\", [(m[\"id\"], now()) for m in result[\"matches\"]]"
+      }
+     ],
+     "svg": "inbox-stats.svg"
+    },
+    {
+     "id": "saved-answers",
+     "name": "Saved answers tab",
+     "one_liner": "Add reusable answers and see each unit's views and questions",
+     "explain": "On the Saved answers tab, I let the landlord add a question and an answer that renters later get word for word. A drop-down sets the scope: all units, or one unit picked from the landlord's own listings. I list saved answers newest first and tag each with its source: seed (demo data), landlord (typed here) or from reply (saved while replying). Below that, a units table gives each unit's rent, search views and number of questions asked.",
+     "why": "Saved answers are what lets a renter get an instant reply, so the landlord needs one place to add and review them. Scope matters because a unit-specific answer beats a landlord-wide one in a tie. The units table shows where views turn into questions.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "saved query",
+       "detail": "Fetches this landlord's saved_answers, newest id first."
+      },
+      {
+       "name": "source label",
+       "detail": "Shows seed, landlord or from reply by replacing the underscore in the stored source."
+      },
+      {
+       "name": "listing_id select",
+       "detail": "Offers 'all units' plus one 'only' option per unit; empty means all units."
+      },
+      {
+       "name": "units query",
+       "detail": "Counts impressions as shown and questions as asked, per listing."
+      },
+      {
+       "name": "add_saved_answer",
+       "detail": "Saves the form with source 'landlord'; landlord_reply saves with 'from_reply'."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 200,
+       "quote": "saved = conn.execute(\"SELECT * FROM saved_answers WHERE landlord_id = ? ORDER BY id DESC\", (lid,)).fetchall()"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 202,
+       "quote": "\"SELECT l.id, l.title, l.rent, (SELECT COUNT(*) FROM impressions i WHERE i.listing_id = l.id) AS shown,\""
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 203,
+       "quote": "\" (SELECT COUNT(*) FROM questions q WHERE q.listing_id = l.id) AS asked\""
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 207,
+       "quote": "f\"{s['source'].replace('_', ' ')}</div></td><td>{e(s['answer'])}</td></tr>\" for s in saved)"
+      },
+      {
+       "file": "leaseapp/landlord_web.py",
+       "line": 214,
+       "quote": "<select name=listing_id style='width:auto'><option value=''>all units</option>{opts}</select><button>Add</button></div></form>"
+      },
+      {
+       "file": "leaseapp/db.py",
+       "line": 36,
+       "quote": "source TEXT NOT NULL DEFAULT 'landlord',   -- 'seed' | 'landlord' | 'from_reply'"
+      }
+     ],
+     "svg": "saved-answers.svg"
+    }
+   ]
+  },
+  {
+   "id": "notifications",
+   "name": "Notifications",
+   "one_liner": "Sends a message on the chosen channel and records it",
+   "explain": "I deliver each message on one of four channels: email, sms, app or chat_only. Real email goes out only when the SMTP_HOST setting exists and the address does not end in example.com. Anything else is simulated, meaning I write the message to the outbox table instead of sending it. Every message gets an outbox row marked sent, simulated or failed. If the mail server breaks, I record the failure and the queue keeps working.",
+   "why": "This matters because the demo has to run with no mail server and never email a stranger. Recording every message in one table lets anyone see exactly what would have been sent. Catching send errors stops one broken mail server from blocking every other message.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "CHANNELS",
+     "detail": "The four allowed channels: email, sms, app and chat_only."
+    },
+    {
+     "name": "send",
+     "detail": "Returns the status, and does nothing at all for chat_only, so the renter checks back in the chat."
+    },
+    {
+     "name": "example.com check",
+     "detail": "Skips real sending for addresses on the reserved example.com domain, which cannot receive mail."
+    },
+    {
+     "name": "except Exception",
+     "detail": "Catches any email error and stores it as a failed outbox row with the error text."
+    },
+    {
+     "name": "_smtp",
+     "detail": "Builds the email from the SMTP_* settings and sends it with a 10 second timeout."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/notify.py",
+     "line": 23,
+     "quote": "CHANNELS = (\"email\", \"sms\", \"app\", \"chat_only\")"
+    },
+    {
+     "file": "leaseapp/notify.py",
+     "line": 28,
+     "quote": "if channel == \"chat_only\":"
+    },
+    {
+     "file": "leaseapp/notify.py",
+     "line": 31,
+     "quote": "if channel == \"email\" and os.environ.get(\"SMTP_HOST\") and not recipient.lower().endswith(\"example.com\"):"
+    },
+    {
+     "file": "leaseapp/notify.py",
+     "line": 35,
+     "quote": "except Exception as e:  # keep the queue working even if email is down"
+    },
+    {
+     "file": "leaseapp/notify.py",
+     "line": 38,
+     "quote": "\"INSERT INTO outbox (question_ref, channel, recipient, subject, body, status, detail, created_at)\""
+    }
+   ],
+   "svg": "notifications.svg"
+  },
+  {
+   "id": "data-store",
+   "name": "Data store",
+   "one_liner": "One SQLite file, six tables, shared by two processes",
+   "explain": "I keep everything in one SQLite file, a database in a single disk file, with six tables: landlords, listings, saved_answers, questions, outbox and impressions. Two processes open that file at once: the stdio server and the web server. So I switch on WAL mode, a write-ahead log that lets reads and writes overlap. On first run I create the tables and load the seed data. Reset deletes the file plus its -wal and -shm side files.",
+   "why": "This matters because the chat server and the landlord page run as separate programs and must see the same questions. Without WAL, one process could block the other while it writes. Seeding on first run means the demo works with no setup.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "SCHEMA",
+     "detail": "The CREATE TABLE statements for the six tables, run safely every time with IF NOT EXISTS."
+    },
+    {
+     "name": "connect",
+     "detail": "Opens the file, turns on WAL mode and foreign keys, and waits up to 10 seconds on a lock."
+    },
+    {
+     "name": "init",
+     "detail": "Creates the tables and seeds them only when the landlords table is empty."
+    },
+    {
+     "name": "init(reset=True)",
+     "detail": "Deletes the database file and its -wal and -shm files before starting fresh."
+    },
+    {
+     "name": "_seed",
+     "detail": "Copies the synthetic landlords, listings and saved answers into their tables."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/db.py",
+     "line": 3,
+     "quote": "Both processes (the stdio MCP server Claude Desktop starts, and the web server"
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 61,
+     "quote": "CREATE TABLE IF NOT EXISTS impressions ("
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 80,
+     "quote": "conn.execute(\"PRAGMA journal_mode=WAL\")"
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 88,
+     "quote": "for suffix in (\"\", \"-wal\", \"-shm\"):"
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 92,
+     "quote": "if conn.execute(\"SELECT COUNT(*) FROM landlords\").fetchone()[0] == 0:"
+    }
+   ],
+   "svg": "data-store.svg"
+  },
+  {
+   "id": "seed-data",
+   "name": "Seed data",
+   "one_liner": "Made-up Boston landlords, listings and answers for the demo",
+   "explain": "I ship a synthetic Boston dataset: 6 landlords, 20 listings and 23 saved answers. Every name, price and answer is made up. The neighbourhood and landmark coordinates are real, looked up in Apple Maps on 2026-11-21. Some landlords deliberately have no saved answer on topics like guarantors, sublets or tours, so the send-to-landlord path shows up in the demo. All landlord emails use example.com, a reserved domain that cannot receive mail.",
+   "why": "This matters because a demo needs realistic maps and distances without using any real person's data. The deliberate gaps force the demo to show the second path, where a question goes to the landlord. The example.com addresses guarantee no real inbox is ever emailed.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "NEIGHBORHOODS",
+     "detail": "Nine neighbourhood centres with real latitude and longitude."
+    },
+    {
+     "name": "LANDMARKS",
+     "detail": "Seven real landmarks, such as Northeastern University and MIT, used for distance questions."
+    },
+    {
+     "name": "LANDLORDS",
+     "detail": "Six made-up landlords, each with an example.com email address."
+    },
+    {
+     "name": "_at",
+     "detail": "Places a listing a few hundred metres from its neighbourhood centre."
+    },
+    {
+     "name": "SAVED_ANSWERS",
+     "detail": "The 23 premade answers, each tied to one landlord and sometimes to one listing."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 1,
+     "quote": "\"\"\"SYNTHETIC demo data. Every landlord, listing, price and answer here is made up."
+    },
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 9,
+     "quote": "# Real coordinates (Apple Maps, 2026-11-21)."
+    },
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 5,
+     "quote": "Emails use example.com, a domain reserved for examples, so they can never be"
+    },
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 151,
+     "quote": "# Gaps are deliberate: some landlords have no answer about guarantors, sublets or"
+    },
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 152,
+     "quote": "# tours, so the demo shows the \"send it to the landlord\" path."
+    }
+   ],
+   "svg": "seed-data.svg"
+  },
+  {
+   "id": "tests",
+   "name": "29 tests and proof",
+   "one_liner": "29 tests, five broken guards and real Claude runs back the claims.",
+   "explain": "I back every claim with 29 automated tests, and 18 of them are matching cases for the saved-answer matcher. Two journey tests start the real server as its own process and replay the full story over stdio (plain pipes) and HTTP. A mutation script then breaks five safety guards on purpose, and a guard only counts as protected if a test fails. Last, I run real Claude sessions and judge them by the database rows they leave, not by the chat text.",
+   "why": "A green test only means something if it can also go red, so each guard is broken on purpose and a test must fail. Chat text can sound right while the database shows nothing was sent, so the rows are the honest witness.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "test_saved_answer_matching",
+     "detail": "Runs 18 matching cases (10 must answer, 8 must go to the landlord) against a fresh temporary database."
+    },
+    {
+     "name": "journey",
+     "detail": "One async function that plays the whole renter-and-landlord story, reused by the stdio and HTTP tests."
+    },
+    {
+     "name": "MUTATIONS",
+     "detail": "Five (file, guard text, replacement, test selector) rows that tests/mutation_check.py breaks one at a time."
+    },
+    {
+     "name": "demo/run_demo.py",
+     "detail": "Drives the real Claude Desktop app and the landlord page through seven scenes while recording the screen."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "tests/test_mvp.py",
+     "line": 1,
+     "quote": "\"\"\"End-to-end and unit tests. Run: uv run pytest -q"
+    },
+    {
+     "file": "README.md",
+     "line": 191,
+     "quote": "- **29 automated tests** (`tests/test_mvp.py`), including one that checks the card is attached to the right tools:"
+    },
+    {
+     "file": "tests/mutation_check.py",
+     "line": 54,
+     "quote": "print(f\"{len(MUTATIONS) - missed} of {len(MUTATIONS)} guards are protected by a failing test\")"
+    },
+    {
+     "file": "demo/README.md",
+     "line": 3,
+     "quote": "These scripts recorded `docs/demo.mp4`. They drive the real Claude Desktop app and a browser window showing the landlord"
+    },
+    {
+     "file": "README.md",
+     "line": 201,
+     "quote": "- **Real Claude (Haiku 5.5, Claude Code headless), 5 sessions, checked against the database.** The first four ran over stdio:"
+    }
+   ],
+   "sub": "tests.html",
+   "sub_map": {
+    "journey-tests": "journey-tests",
+    "mutation-checks": "mutation-checks",
+    "real-claude-runs": "real-claude-runs"
+   },
+   "children": [
+    {
+     "id": "journey-tests",
+     "name": "Journey over stdio and HTTP",
+     "one_liner": "One story, replayed over stdio and HTTP against a real server.",
+     "explain": "I write the whole renter-and-landlord story once, as a function called journey, and run it twice. Run one starts the server as a separate process and talks over stdio, which is how Claude Desktop runs it. Run two starts a real HTTP server on a free port, and the landlord's reply goes through the real web form. Both runs search, get a saved answer, get not_answered, send the question, read the reply, then get the new saved answer. Two extra tests check the tunnel: the landlord page answers 403 to the tunnel hostname, and /mcp rejects an unknown host.",
+     "why": "One shared function means the two transports cannot drift apart, because the same asserts run on both. Unit tests alone would miss a bug in how the server starts or in the form post. The last step proves a landlord's reply really becomes a saved answer for the next renter.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "journey",
+       "detail": "Checks the five tool names, then search, saved answer, not_answered, send, waiting, reply, replied and the new saved answer."
+      },
+      {
+       "name": "test_journey_over_stdio",
+       "detail": "Launches python -m leaseapp stdio as a subprocess; the reply is written straight to the shared database."
+      },
+      {
+       "name": "http_server",
+       "detail": "Starts the server on a free port with a tunnel hostname, waits until it listens, and terminates it afterwards."
+      },
+      {
+       "name": "test_journey_over_http_with_landlord_page",
+       "detail": "Posts the reply to /landlord/L1/reply/<ref> exactly as the landlord's form would, then checks the page and outbox."
+      },
+      {
+       "name": "test_landlord_page_is_localhost_only",
+       "detail": "Expects 403 for the tunnel hostname on /landlord and 200 for localhost."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "tests/test_mvp.py",
+       "line": 4,
+       "quote": "stdio (how Claude Desktop runs it) and once over HTTP (how ChatGPT reaches it),"
+      },
+      {
+       "file": "tests/test_mvp.py",
+       "line": 132,
+       "quote": "async def journey(client: Client, post_reply) -> None:"
+      },
+      {
+       "file": "tests/test_mvp.py",
+       "line": 232,
+       "quote": "def reply(lid, ref, text):  # exactly what the landlord's form submits"
+      },
+      {
+       "file": "tests/test_mvp.py",
+       "line": 238,
+       "quote": "await journey(c, reply)"
+      },
+      {
+       "file": "tests/test_mvp.py",
+       "line": 167,
+       "quote": "assert again[\"status\"] == \"answered\" and \"courtyard\" in again[\"answer\"]"
+      },
+      {
+       "file": "tests/test_mvp.py",
+       "line": 256,
+       "quote": "for host, ok in ((\"demo.trycloudflare.com\", True), (\"evil.example\", False)):"
+      }
+     ],
+     "svg": "journey-tests.svg"
+    },
+    {
+     "id": "mutation-checks",
+     "name": "Mutation checks",
+     "one_liner": "Five guards broken on purpose; a test must fail each time.",
+     "explain": "I break each of five safety guards on purpose and check that a test notices. For every guard, tests/mutation_check.py swaps the exact guard text for a harmless replacement in the source file. It runs the single test that should notice, then always restores the real file, even if the run crashes. The five guards are the topic-word rule, the localhost-only landlord page, send-once, saving a reply as an answer, and landlord ownership. A guard counts as caught only when pytest exits with an error, and all 5 of 5 were caught.",
+     "why": "A passing suite proves little until it can fail. Without this check, a guard could be deleted and every test would stay green, so a silent safety hole would ship.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "MUTATIONS",
+       "detail": "Five rows of file, exact guard text, replacement, and the pytest -k selector that should fail."
+      },
+      {
+       "name": "GUARD NOT FOUND",
+       "detail": "If the guard text does not appear exactly once, the guard is reported as missed instead of silently skipped."
+      },
+      {
+       "name": "write and restore",
+       "detail": "The broken text is written, pytest runs, and a finally block puts the original file back."
+      },
+      {
+       "name": "caught",
+       "detail": "A guard is caught when the pytest return code is not zero; the script prints how many of 5 are protected."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "tests/mutation_check.py",
+       "line": 3,
+       "quote": "A test suite that passes proves little until you know it can fail. For each guard"
+      },
+      {
+       "file": "tests/mutation_check.py",
+       "line": 17,
+       "quote": "MUTATIONS = ["
+      },
+      {
+       "file": "tests/mutation_check.py",
+       "line": 41,
+       "quote": "if original.count(guard) != 1:"
+      },
+      {
+       "file": "tests/mutation_check.py",
+       "line": 45,
+       "quote": "path.write_text(original.replace(guard, broken, 1))"
+      },
+      {
+       "file": "tests/mutation_check.py",
+       "line": 50,
+       "quote": "path.write_text(original)        # always restore the real code"
+      },
+      {
+       "file": "tests/mutation_check.py",
+       "line": 51,
+       "quote": "caught = r.returncode != 0"
+      }
+     ],
+     "svg": "mutation-checks.svg"
+    },
+    {
+     "id": "real-claude-runs",
+     "name": "Real Claude runs",
+     "one_liner": "Real Claude sessions judged by database rows, not chat text.",
+     "explain": "I run real Claude sessions and judge them by the database rows they leave, not by what the chat text says. Some runs used headless Claude Haiku (Claude Code with no window), over stdio and over HTTP. Others used the real Claude Desktop app, which demo/run_demo.py drives with typed keystrokes and button clicks across seven scenes. One run caught a bug: Claude answered a repeat question from chat history and did not call ask_landlord again, so it missed the new answer. I fixed it with a server instruction to call ask_landlord again every time, and the retake confirmed the fix.",
+     "why": "A chat transcript can read fine while nothing was saved or sent, so the database is the only honest witness. Only a real model, run end to end, can show it skipping a tool call that the scripted tests always make.",
+     "basis": "inferred",
+     "owner": "me",
+     "units": [
+      {
+       "name": "headless Haiku runs",
+       "detail": "Claude Code sessions over stdio and HTTP, checked afterwards against the database."
+      },
+      {
+       "name": "demo/run_demo.py",
+       "detail": "Resets the demo database, restarts Claude Desktop and the landlord server, then plays seven scenes."
+      },
+      {
+       "name": "wait_done",
+       "detail": "Clicks Allow once when asked and waits until Stop response is gone, with a 200 second timeout."
+      },
+      {
+       "name": "step 7",
+       "detail": "Opens a fresh chat and re-asks the bike question so it is answered from the landlord's new saved answer."
+      },
+      {
+       "name": "re-ask instruction",
+       "detail": "The server instructions tell Claude to call ask_landlord again every time a question is asked."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "README.md",
+       "line": 201,
+       "quote": "- **Real Claude (Haiku 5.5, Claude Code headless), 5 sessions, checked against the database.** The first four ran over stdio:"
+      },
+      {
+       "file": "README.md",
+       "line": 221,
+       "quote": "- **Claude can answer from chat history.** In the first recorded take, Claude did not call `ask_landlord` again for a repeat"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 43,
+       "quote": "- Landlords add answers over time. Call ask_landlord again every time a question is"
+      },
+      {
+       "file": "leaseapp/mcp_server.py",
+       "line": 44,
+       "quote": "asked, even if the same question got \"not_answered\" earlier in this chat."
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 213,
+       "quote": "step(\"7. Next renter: answered instantly from the landlord's new answer\")"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 215,
+       "quote": "send(\"Hi, I'm looking at A203. Ask the landlord: can I store my bike in the basement?\")"
+      }
+     ],
+     "svg": "real-claude-runs.svg"
+    }
+   ]
+  },
+  {
+   "id": "demo-recorder",
+   "name": "Demo recorder",
+   "one_liner": "Scripts that drive Claude Desktop and record the demo video",
+   "explain": "I drive the real Claude Desktop app with a script, so the demo video shows a live chat and not a mock-up. I use agent-desktop, a command-line tool that reads each app's accessibility tree (the labelled list of buttons and fields it exposes). run_demo.py plays seven scenes while macOS screencapture records, and edit.py cuts the result into one video with a title card per scene. The whole run takes about 5 minutes with my hands off the keyboard, and the previous app comes back when it ends.",
+   "why": "Without a script, the demo would be a hand-made screen capture that nobody could repeat exactly. A scripted run replays the same seven scenes after any design change, so I can re-record the video in minutes.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "ad.py",
+     "detail": "A thin wrapper that runs one agent-desktop command and returns its JSON reply."
+    },
+    {
+     "name": "run_demo.py main",
+     "detail": "Resets the demo data, restarts both apps, checks the layout, then plays the seven scenes."
+    },
+    {
+     "name": "step / end_step",
+     "detail": "Log the label, start and end second of each scene into steps.json."
+    },
+    {
+     "name": "edit.py",
+     "detail": "Cuts raw.mov and raw2.mov into leaseboston-demo.mp4 using ffmpeg."
+    },
+    {
+     "name": "SUBTITLES",
+     "detail": "One caption per scene, shown on its title card."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "demo/run_demo.py",
+     "line": 1,
+     "quote": "\"\"\"Drive the LeaseBoston demo in Claude Desktop + the landlord page, while recording the screen."
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 23,
+     "quote": "def step(label):"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 213,
+     "quote": "step(\"7. Next renter: answered instantly from the landlord's new answer\")"
+    },
+    {
+     "file": "demo/run_demo.py",
+     "line": 222,
+     "quote": "subprocess.run([\"open\", \"-a\", \"Obsidian\"])   # back to Obsidian = the demo is over"
+    },
+    {
+     "file": "demo/edit.py",
+     "line": 1,
+     "quote": "\"\"\"Cut the raw recording into the final demo video."
+    },
+    {
+     "file": "demo/README.md",
+     "line": 26,
+     "quote": "python3 demo/run_demo.py                 # about 5 minutes, hands off"
+    }
+   ],
+   "sub": "demo.html",
+   "sub_map": {
+    "accessibility-driver": "accessibility-driver",
+    "headed-input": "headed-input",
+    "recording-edit": "recording-edit"
+   },
+   "children": [
+    {
+     "id": "accessibility-driver",
+     "name": "Accessibility driver",
+     "one_liner": "Finds buttons by role and name, then acts on their refs",
+     "explain": "I wrap the agent-desktop command-line tool in ad.run, which runs one command and parses its JSON reply. To find a control, I search the accessibility tree (the labelled list of buttons and fields an app exposes) by role and name. Each match carries a ref_id, a short handle that later click and type commands use as their target. A find that matches nothing still returns ok:true, so I count the matches instead of trusting the ok flag. To see if Claude is busy, I look for a 'Stop response' button every 1.5 seconds; two empty checks mean it is done.",
+     "why": "If I trusted the ok flag, every search would look like a hit and the script would think Claude was always busy. It would then never move to the next scene. Searching by role and name also survives a button moving, where fixed screen coordinates would not.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "run",
+       "detail": "Runs agent-desktop with optional --headed and returns the parsed JSON."
+      },
+      {
+       "name": "ref",
+       "detail": "Finds one element by role and name and returns its ref_id, or None."
+      },
+      {
+       "name": "matches",
+       "detail": "Returns the list of matches for a name, role and app, empty when nothing matches."
+      },
+      {
+       "name": "click",
+       "detail": "Takes the chosen match and clicks its ref_id."
+      },
+      {
+       "name": "wait_done",
+       "detail": "Polls every 1.5 s and returns once 'Stop response' has been gone for two checks in a row."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "demo/ad.py",
+       "line": 4,
+       "quote": "def run(*args, headed=False):"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 78,
+       "quote": "busy = bool(matches(\"Stop response\", \"button\"))"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 36,
+       "quote": "return data.get(\"matches\") or ([data[\"match\"]] if data.get(\"match\") else [])"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 43,
+       "quote": "r = ad.run(\"click\", m[index][\"ref_id\"])"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 78,
+       "quote": "busy = bool(matches(\"Stop response\", \"button\"))"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 81,
+       "quote": "if idle >= 2 and (seen or time.time() - t > 20):"
+      }
+     ],
+     "svg": "accessibility-driver.svg"
+    },
+    {
+     "id": "headed-input",
+     "name": "Headed input",
+     "one_liner": "Types with real keystrokes and sends by clicking the button",
+     "explain": "Claude Desktop's message box ignores text typed in the background, so I type with agent-desktop's --headed mode, which sends real keystrokes. Real keystrokes use the live keyboard, so I keep my hands off until the script brings the previous app back. To send, send() fills the box and then clicks the 'Send message' button instead of pressing Return. Focus can sit on a card button in the chat, and Return would press that button instead of sending my message. When an approval prompt appears, wait_done pauses 1.2 seconds so a viewer can read it, then clicks 'Allow once'.",
+     "why": "Background typing would leave the box empty, so the demo would send nothing. Clicking the named button sends the message whichever control holds focus. The price is that any touch of the keyboard during the run lands in the wrong place.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "run(..., headed=True)",
+       "detail": "Puts --headed in front of the command so input arrives as real events."
+      },
+      {
+       "name": "type_into",
+       "detail": "Finds a field by its placeholder text and types into the last match with headed=True."
+      },
+      {
+       "name": "send",
+       "detail": "Tries three placeholder names, types, waits 0.6 s, then clicks 'Send message'."
+      },
+      {
+       "name": "wait_done approval",
+       "detail": "Spots 'Allow once', waits 1.2 s for the viewer, then clicks it and keeps waiting."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "demo/README.md",
+       "line": 19,
+       "quote": "- **Hands off.** Claude Desktop's message box ignores text typed in the background, so the script uses real keystrokes"
+      },
+      {
+       "file": "demo/ad.py",
+       "line": 5,
+       "quote": "cmd = [\"agent-desktop\"] + ([\"--headed\"] if headed else []) + list(args)"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 51,
+       "quote": "return ad.run(\"type\", m[index][\"ref_id\"], text, headed=True).get(\"ok\")"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 68,
+       "quote": "click(\"Send message\")"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 76,
+       "quote": "time.sleep(1.2)  # let the viewer see the approval prompt"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 77,
+       "quote": "click(\"Allow once\"); print(\"   approved\", flush=True); idle = 0; continue"
+      }
+     ],
+     "svg": "headed-input.svg"
+    },
+    {
+     "id": "recording-edit",
+     "name": "Recording and editing",
+     "one_liner": "Records below the menu bar, pauses for new chats, speeds long scenes",
+     "explain": "I record with macOS screencapture -v on the region 0,33,1512,949, which starts below the menu bar. Before recording, I check each window's x, width and height, retrying up to three times, and stop if a window is wrong. I stop the recording with SIGINT (the interrupt signal Ctrl-C sends) while a new chat opens, then start a second file, raw2.mov. edit.py puts a title card of 3.5 seconds before each scene and speeds up long scenes. It sets the speed to the clip length divided by 40, so no scene lasts longer than 40 seconds.",
+     "why": "The sidebar would show my chat history while a new chat opens, so the recording pauses around it. Checking the layout first means a misplaced window stops the run in seconds, not after a five-minute take. Capping scenes at 40 seconds hides the waiting for Claude.",
+     "basis": "evidence",
+     "owner": "me",
+     "units": [
+      {
+       "name": "screencapture -v -R0,33,1512,949",
+       "detail": "Records video of one screen region; the 33 pixel offset skips the menu bar."
+      },
+      {
+       "name": "window check loop",
+       "detail": "Tries up to three times to match each window's bounds, then exits with 'nothing recorded'."
+      },
+      {
+       "name": "new_chat",
+       "detail": "Opens the sidebar, clicks New, hides the sidebar, and exits if either step failed."
+      },
+      {
+       "name": "MAX_SECONDS",
+       "detail": "Caps each scene at 40 seconds by setting speed = max(1.0, dur / MAX_SECONDS)."
+      },
+      {
+       "name": "steps.json",
+       "detail": "Holds each scene's label, start and end second so edit.py knows where to cut."
+      }
+     ],
+     "evidence": [
+      {
+       "file": "demo/run_demo.py",
+       "line": 140,
+       "quote": "rec = subprocess.Popen([\"screencapture\", \"-v\", \"-x\", \"-k\", \"-R0,33,1512,949\", f\"{OUT}/raw.mov\"])"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 129,
+       "quote": "raise SystemExit(f\"setup failed: {app} window is {b}, not x={x} w={w}; nothing recorded\")"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 208,
+       "quote": "rec.send_signal(signal.SIGINT); rec.wait(timeout=30)   # pause recording: the sidebar flashes"
+      },
+      {
+       "file": "demo/run_demo.py",
+       "line": 89,
+       "quote": "\"\"\"Open a fresh chat. The sidebar flashes open, so never call this while recording.\"\"\""
+      },
+      {
+       "file": "demo/edit.py",
+       "line": 13,
+       "quote": "W, H, FPS, MAX_SECONDS = 1512, 950, 30, 40  # step times are from T0, which starts 2 s into raw.mov"
+      },
+      {
+       "file": "demo/edit.py",
+       "line": 63,
+       "quote": "speed = max(1.0, dur / MAX_SECONDS)"
+      }
+     ],
+     "svg": "recording-edit.svg"
+    }
+   ]
+  }
+ ]
+}

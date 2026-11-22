@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="A message reaches the gate: real email goes out only when SMTP is set and the address is not example.com, otherwise it is simulated; sent, simulated and failed messages all land in the outbox table">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="18" y="130" width="52" height="40" rx="3"/>
+<path d="M18,132 L44,154 L70,132"/>
+<path d="M70,150 L108,150"/>
+<path d="M108,150 L150,120 L192,150 L150,180 Z"/>
+<path d="M192,150 C232,150 232,90 282,90 L350,125" stroke="#3b82f6" stroke-dasharray="1 7"/>
+<path d="M192,150 C232,150 232,215 282,215 L350,170" stroke="#f97316" stroke-dasharray="1 7"/>
+<path d="M300,90 Q330,30 395,106" stroke="#ef4444" stroke-dasharray="6 6" opacity="0"><animate attributeName="opacity" dur="6s" repeatCount="indefinite" values="0;0;1;1;0" keyTimes="0;0.5;0.55;0.95;1"/></path>
+<rect x="350" y="108" width="90" height="84" rx="4"/>
+<path d="M350,136 L440,136 M350,164 L440,164" stroke-width="1.5"/>
+</g>
+<circle r="6" fill="#f97316" stroke="none"><animateMotion dur="6s" repeatCount="indefinite" path="M70,150 L192,150 C232,150 232,215 282,215 L350,170" keyPoints="0;1;1" keyTimes="0;0.45;1" calcMode="linear"/><animate attributeName="opacity" dur="6s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.44;0.46;1"/></circle>
+<circle r="6" fill="#3b82f6" stroke="none" opacity="0"><animateMotion dur="6s" repeatCount="indefinite" path="M70,150 L192,150 C232,150 232,90 282,90 L350,125" keyPoints="0;0;1;1" keyTimes="0;0.5;0.95;1" calcMode="linear"/><animate attributeName="opacity" dur="6s" repeatCount="indefinite" values="0;0;1;1;0" keyTimes="0;0.5;0.52;0.94;0.96"/></circle>
+<text x="14" y="198">message</text>
+<text x="132" y="156" style="font-size:14px">SMTP?</text>
+<text x="236" y="76" style="fill:#3b82f6">sent</text>
+<text x="222" y="248" style="fill:#f97316">simulated</text>
+<text x="330" y="44" style="fill:#ef4444">failed</text>
+<text x="360" y="222">outbox</text>
+</svg>

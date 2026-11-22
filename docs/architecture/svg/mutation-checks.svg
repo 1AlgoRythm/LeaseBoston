@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="Five guards are broken one at a time; each time the matching test fails, then the file is restored: 5 of 5 caught">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter>
+<marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#8a8f98" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker>
+<marker id="ab" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="45" y="50" width="120" height="28" rx="8"/><rect x="45" y="92" width="120" height="28" rx="8"/><rect x="45" y="134" width="120" height="28" rx="8"/><rect x="45" y="176" width="120" height="28" rx="8"/><rect x="45" y="218" width="120" height="28" rx="8"/>
+<rect x="300" y="80" width="150" height="110" rx="12"/>
+<path d="M170,135 L292,135" marker-end="url(#ah)"/>
+<g stroke="#f97316" stroke-dasharray="4 9" stroke-width="3.5">
+<path d="M52,64 L158,64" opacity="0"><animate attributeName="opacity" dur="9s" repeatCount="indefinite" values="0;1;0;0" keyTimes="0;0.01;0.12;1"/></path>
+<path d="M52,106 L158,106" opacity="0"><animate attributeName="opacity" dur="9s" repeatCount="indefinite" values="0;0;1;0;0" keyTimes="0;0.15;0.16;0.27;1"/></path>
+<path d="M52,148 L158,148" opacity="0"><animate attributeName="opacity" dur="9s" repeatCount="indefinite" values="0;0;1;0;0" keyTimes="0;0.30;0.31;0.42;1"/></path>
+<path d="M52,190 L158,190" opacity="0"><animate attributeName="opacity" dur="9s" repeatCount="indefinite" values="0;0;1;0;0" keyTimes="0;0.45;0.46;0.57;1"/></path>
+<path d="M52,232 L158,232" opacity="0"><animate attributeName="opacity" dur="9s" repeatCount="indefinite" values="0;0;1;0;0" keyTimes="0;0.60;0.61;0.72;1"/></path>
+</g>
+<path d="M355,122 L395,162 M395,122 L355,162" stroke="#ef4444" stroke-width="4" opacity="0"><animate attributeName="opacity" dur="9s" repeatCount="indefinite" values="0;1;0;1;0;1;0;1;0;1;0;0" keyTimes="0;0.06;0.12;0.21;0.27;0.36;0.42;0.51;0.57;0.66;0.72;1" calcMode="discrete"/></path>
+</g>
+<circle cx="25" cy="64" r="7" fill="#f97316"><animate attributeName="cy" dur="9s" repeatCount="indefinite" values="64;106;148;190;232;232" keyTimes="0;0.15;0.30;0.45;0.60;1" calcMode="discrete"/><animate attributeName="opacity" dur="9s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;0.74;0.75;1"/></circle>
+<text x="45" y="34">5 guards</text>
+<text x="176" y="124">remove one</text>
+<text x="350" y="108">test</text>
+<text x="345" y="182" style="fill:#ef4444" opacity="0">fails<animate attributeName="opacity" dur="9s" repeatCount="indefinite" values="0;1;0;1;0;1;0;1;0;1;0;0" keyTimes="0;0.06;0.12;0.21;0.27;0.36;0.42;0.51;0.57;0.66;0.72;1" calcMode="discrete"/></text>
+<text x="290" y="276" opacity="0">5 of 5 caught<animate attributeName="opacity" dur="9s" repeatCount="indefinite" values="0;0;1;1;0" keyTimes="0;0.76;0.77;0.97;1"/></text>
+</svg>

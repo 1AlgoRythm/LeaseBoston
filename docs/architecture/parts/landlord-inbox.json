@@ -1,0 +1,319 @@
+{
+ "parent": {
+  "id": "landlord-inbox",
+  "name": "Landlord inbox",
+  "one_liner": "The landlord's local web page for answering renter questions",
+  "explain": "I am the landlord's side of LeaseBoston: plain web pages, served by the same server as /mcp, where renter questions arrive. I answer only when the request's Host header, the website name the browser asked for, is localhost, 127.0.0.1 or [::1]. My Inbox tab shows four count tiles and every question, and my Saved answers tab holds the replies renters get instantly. My buttons call service.landlord_reply and service.add_saved_answer, so I hold no business rules myself.",
+  "why": "I stay local because the page shows renters' contact details and has no login yet, so a public tunnel for ChatGPT exposes only /mcp. Keeping the rules in service.py means the chat tools and this page can never disagree about what a reply or a saved answer does.",
+  "basis": "evidence",
+  "owner": "me",
+  "units": [
+   {
+    "name": "local_only",
+    "detail": "Wraps every landlord route and refuses a non-local Host with a 403."
+   },
+   {
+    "name": "inbox",
+    "detail": "Builds the stat tiles, the question list and the open question for one landlord."
+   },
+   {
+    "name": "answers",
+    "detail": "Builds the Saved answers tab: add form, saved list and units table."
+   },
+   {
+    "name": "reply",
+    "detail": "Takes the reply form post and hands it to service.landlord_reply."
+   },
+   {
+    "name": "add_saved",
+    "detail": "Takes the add-answer form post and hands it to service.add_saved_answer."
+   }
+  ],
+  "evidence": [
+   {
+    "file": "leaseapp/landlord_web.py",
+    "line": 4,
+    "quote": "on localhost, so a public tunnel for ChatGPT exposes /mcp but never this page"
+   },
+   {
+    "file": "leaseapp/landlord_web.py",
+    "line": 5,
+    "quote": "(it shows renters' contact details and has no login yet)."
+   },
+   {
+    "file": "leaseapp/service.py",
+    "line": 1,
+    "quote": "\"\"\"The rules, in one place. The MCP tools and the landlord page both call these.\"\"\""
+   },
+   {
+    "file": "leaseapp/landlord_web.py",
+    "line": 227,
+    "quote": "service.landlord_reply(lid, ref, f.get(\"reply\", \"\"), save_as)"
+   },
+   {
+    "file": "leaseapp/landlord_web.py",
+    "line": 239,
+    "quote": "service.add_saved_answer(lid, f.get(\"listing_id\") or None, f.get(\"question\", \"\"), f.get(\"answer\", \"\"))"
+   },
+   {
+    "file": "leaseapp/landlord_web.py",
+    "line": 68,
+    "quote": "def local_only(handler):"
+   }
+  ]
+ },
+ "children": [
+  {
+   "id": "localhost-only",
+   "name": "Localhost only",
+   "one_liner": "Refuses any request whose Host is not localhost",
+   "explain": "I read the Host header, the website name the browser asked for, on every landlord page request. If it is not 127.0.0.1, localhost or [::1], I answer 403, which means forbidden, with a one-line refusal. I wrap all seven landlord routes with local_only, so the inbox, saved answers, reply forms and outbox share one check. A public tunnel for ChatGPT therefore exposes /mcp but never the page that shows renters' contact details. There is no login yet, so this check is the only guard.",
+   "why": "Without it, a tunnel meant to give ChatGPT the /mcp endpoint would also publish renters' names, emails and phone numbers. Because there is no login yet, a host check is the cheapest guard, and it refuses by default.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "LOCAL_HOSTS",
+     "detail": "The three names counted as local: 127.0.0.1, localhost and [::1]."
+    },
+    {
+     "name": "local_only",
+     "detail": "A decorator, meaning a wrapper, that runs the Host check before the real handler."
+    },
+    {
+     "name": "rsplit(\":\", 1)[0]",
+     "detail": "Cuts the port off the Host header so localhost:8000 still counts as localhost."
+    },
+    {
+     "name": "status_code=403",
+     "detail": "The refusal a non-local Host gets, with the text 'only available on localhost'."
+    },
+    {
+     "name": "@local_only",
+     "detail": "Stacked under each @mcp.custom_route so every page gets the check."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 4,
+     "quote": "on localhost, so a public tunnel for ChatGPT exposes /mcp but never this page"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 5,
+     "quote": "(it shows renters' contact details and has no login yet)."
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 21,
+     "quote": "LOCAL_HOSTS = {\"127.0.0.1\", \"localhost\", \"[::1]\"}"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 70,
+     "quote": "if request.headers.get(\"host\", \"\").rsplit(\":\", 1)[0] not in LOCAL_HOSTS:"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 71,
+     "quote": "return PlainTextResponse(\"The landlord page is only available on localhost.\", status_code=403)"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 108,
+     "quote": "@local_only"
+    }
+   ],
+   "svg": "localhost-only.svg"
+  },
+  {
+   "id": "inbox-states",
+   "name": "Inbox and its four states",
+   "one_liner": "Lists every question, waiting first, with a detail view per status",
+   "explain": "I list every question for the landlord, waiting ones first, then the newest, each with a coloured status dot. The dots are amber for waiting, green for replied, blue for auto-answered and grey for not sent. The open question shows the listing, plus the renter and their reply channel (how they want to hear back) once it was sent. Under it, waiting gets a reply box, and replied shows the reply that was sent. Auto-answered shows the matched saved answer and its score, and not sent shows a form to add an answer.",
+   "why": "Waiting first means a renter who is actually blocked is never buried under finished questions. Each status needs a different action, so showing only that action avoids a reply box on a question already answered. The score lets the landlord judge whether the saved answer really fitted.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "STATUS",
+     "detail": "Maps the four status codes to the labels the landlord reads."
+    },
+    {
+     "name": "ORDER BY q.status = 'waiting' DESC",
+     "detail": "Puts waiting questions first, then sorts by newest asked_at."
+    },
+    {
+     "name": ".dot classes",
+     "detail": "One CSS class per status gives each list dot its colour."
+    },
+    {
+     "name": "detail",
+     "detail": "Picks the panel under the open question from its status."
+    },
+    {
+     "name": "match_score",
+     "detail": "The matcher's score, shown beside the saved answer that auto-answered the question."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 42,
+     "quote": ".waiting{background:var(--amber)}.replied{background:var(--green)}.auto_answered{background:var(--blue)}.not_sent{background:#B9B4AC}"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 138,
+     "quote": "\" WHERE q.landlord_id = ? ORDER BY q.status = 'waiting' DESC, q.asked_at DESC\", (lid,)).fetchall()"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 170,
+     "quote": "if q[\"status\"] == \"waiting\":"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 178,
+     "quote": "elif q[\"status\"] == \"replied\":"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 180,
+     "quote": "elif q[\"status\"] == \"auto_answered\":"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 182,
+     "quote": "f\"(match {q['match_score']})</div>{e(q['matched_a'])}</div>\")"
+    }
+   ],
+   "svg": "inbox-states.svg"
+  },
+  {
+   "id": "inbox-stats",
+   "name": "Inbox stat tiles",
+   "one_liner": "Four tiles: waiting, auto-answered, not sent, search views",
+   "explain": "I show four number tiles above the inbox: waiting for you, auto-answered, asked-not-sent and search views. I count the first three in Python from the question list I already fetched, so only the views number needs its own query. Search views counts rows in the impressions table, which logs each time a listing showed up in a renter's search results. I join those rows to this landlord's listings, so a search that shows three of their units adds three views.",
+   "why": "The tiles tell a landlord what needs them now before they open a single question. Search views add context the questions cannot give, namely whether renters are seeing the units at all.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "count",
+     "detail": "A small lambda that counts the landlord's questions with one given status."
+    },
+    {
+     "name": "views",
+     "detail": "A COUNT of impressions joined to the listings this landlord owns."
+    },
+    {
+     "name": "impressions",
+     "detail": "One row per listing shown in a search, written by service.search."
+    },
+    {
+     "name": ".stats",
+     "detail": "A four-column grid for the tiles, two columns on a narrow screen."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 139,
+     "quote": "views = conn.execute(\"SELECT COUNT(*) FROM impressions i JOIN listings l ON l.id = i.listing_id\""
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 140,
+     "quote": "\" WHERE l.landlord_id = ?\", (lid,)).fetchone()[0]"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 141,
+     "quote": "count = lambda st: sum(q[\"status\"] == st for q in qs)"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 144,
+     "quote": "f\"<div class=stat><b>{count('not_sent')}</b><span>asked, not sent</span></div>\""
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 145,
+     "quote": "f\"<div class=stat><b>{views}</b><span>search views</span></div></div>\")"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 24,
+     "quote": "\"INSERT INTO impressions VALUES (?, ?)\", [(m[\"id\"], now()) for m in result[\"matches\"]]"
+    }
+   ],
+   "svg": "inbox-stats.svg"
+  },
+  {
+   "id": "saved-answers",
+   "name": "Saved answers tab",
+   "one_liner": "Add reusable answers and see each unit's views and questions",
+   "explain": "On the Saved answers tab, I let the landlord add a question and an answer that renters later get word for word. A drop-down sets the scope: all units, or one unit picked from the landlord's own listings. I list saved answers newest first and tag each with its source: seed (demo data), landlord (typed here) or from reply (saved while replying). Below that, a units table gives each unit's rent, search views and number of questions asked.",
+   "why": "Saved answers are what lets a renter get an instant reply, so the landlord needs one place to add and review them. Scope matters because a unit-specific answer beats a landlord-wide one in a tie. The units table shows where views turn into questions.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "saved query",
+     "detail": "Fetches this landlord's saved_answers, newest id first."
+    },
+    {
+     "name": "source label",
+     "detail": "Shows seed, landlord or from reply by replacing the underscore in the stored source."
+    },
+    {
+     "name": "listing_id select",
+     "detail": "Offers 'all units' plus one 'only' option per unit; empty means all units."
+    },
+    {
+     "name": "units query",
+     "detail": "Counts impressions as shown and questions as asked, per listing."
+    },
+    {
+     "name": "add_saved_answer",
+     "detail": "Saves the form with source 'landlord'; landlord_reply saves with 'from_reply'."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 200,
+     "quote": "saved = conn.execute(\"SELECT * FROM saved_answers WHERE landlord_id = ? ORDER BY id DESC\", (lid,)).fetchall()"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 202,
+     "quote": "\"SELECT l.id, l.title, l.rent, (SELECT COUNT(*) FROM impressions i WHERE i.listing_id = l.id) AS shown,\""
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 203,
+     "quote": "\" (SELECT COUNT(*) FROM questions q WHERE q.listing_id = l.id) AS asked\""
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 207,
+     "quote": "f\"{s['source'].replace('_', ' ')}</div></td><td>{e(s['answer'])}</td></tr>\" for s in saved)"
+    },
+    {
+     "file": "leaseapp/landlord_web.py",
+     "line": 214,
+     "quote": "<select name=listing_id style='width:auto'><option value=''>all units</option>{opts}</select><button>Add</button></div></form>"
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 36,
+     "quote": "source TEXT NOT NULL DEFAULT 'landlord',   -- 'seed' | 'landlord' | 'from_reply'"
+    }
+   ],
+   "svg": "saved-answers.svg"
+  }
+ ]
+}

@@ -1,0 +1,314 @@
+{
+ "parent": {
+  "id": "question-lifecycle",
+  "name": "Question lifecycle",
+  "one_liner": "A reference code and four statuses carry each question to its answer",
+  "explain": "I give every landlord question a short reference code and a status, and the status shows where it stands. A question starts as auto_answered when a saved answer matched, or not_sent when none did. It becomes waiting once the renter says yes and I send it, then replied when the landlord answers. The landlord's reply can also be saved as a new answer, so the next renter asking the same thing gets it instantly.",
+  "why": "Each MCP call, one request from the model, arrives on its own, so the code and status are the only memory of a question. Without four clear statuses, I could not stop a double send or know when a reply is due.",
+  "basis": "inferred",
+  "owner": "me",
+  "units": [
+   {
+    "name": "new_ref",
+    "detail": "Mints the Q plus five character code that names one question."
+   },
+   {
+    "name": "questions.status",
+    "detail": "Holds auto_answered, not_sent, waiting or replied for every question."
+   },
+   {
+    "name": "send_to_landlord",
+    "detail": "Moves a question to waiting and notifies the landlord and the renter."
+   },
+   {
+    "name": "check_reply",
+    "detail": "Reads a question's status by code and returns the reply once it exists."
+   },
+   {
+    "name": "landlord_reply",
+    "detail": "Stores the reply, sets replied, and can save it as a new answer."
+   }
+  ],
+  "evidence": [
+   {
+    "file": "leaseapp/db.py",
+    "line": 45,
+    "quote": "status TEXT NOT NULL,   -- 'auto_answered' | 'not_sent' | 'waiting' | 'replied'"
+   },
+   {
+    "file": "leaseapp/service.py",
+    "line": 62,
+    "quote": "(ref, listing[\"id\"], lid, question, \"auto_answered\" if hit else \"not_sent\","
+   },
+   {
+    "file": "leaseapp/service.py",
+    "line": 98,
+    "quote": "\"UPDATE questions SET status = 'waiting', renter_name = ?, channel = ?, contact = ?, sent_at = ?\""
+   },
+   {
+    "file": "leaseapp/service.py",
+    "line": 119,
+    "quote": "def check_reply(ref: str) -> dict:"
+   },
+   {
+    "file": "leaseapp/service.py",
+    "line": 162,
+    "quote": "conn.execute(\"UPDATE questions SET status = 'replied', reply = ?, replied_at = ? WHERE ref = ?\","
+   }
+  ]
+ },
+ "children": [
+  {
+   "id": "reference-code",
+   "name": "Reference code",
+   "svg": "reference-code.svg",
+   "one_liner": "Each question gets a short readable code the model passes back",
+   "explain": "I mint a reference code as Q plus five random characters, drawn with Python's secrets module, which is meant for hard-to-predict picks. The five characters come from 31 symbols with no 0, O, 1, I or L, so a code reads aloud cleanly. Each MCP call arrives alone, so I return the code and the model passes it back as a plain argument. The code's status is one of four words: auto_answered, not_sent, waiting or replied.",
+   "why": "Nothing remembers an earlier call, so a later call needs a handle to name the question it means. Look-alike characters such as 0 and O would be misread when a code is spoken or typed. Redrawing a taken code keeps two questions from sharing one.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "new_ref",
+     "detail": "Builds Q plus five characters and retries while the code is already in the questions table."
+    },
+    {
+     "name": "alphabet",
+     "detail": "The 31 allowed symbols, with 0, O, 1, I and L left out."
+    },
+    {
+     "name": "_question",
+     "detail": "Finds a question by its code, trimmed and upper-cased, or raises a fixable error."
+    },
+    {
+     "name": "reference_code argument",
+     "detail": "The tool parameter the model fills with the code that ask_landlord returned."
+    },
+    {
+     "name": "questions.status",
+     "detail": "The four statuses a code can show: auto_answered, not_sent, waiting, replied."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/db.py",
+     "line": 118,
+     "quote": "alphabet = \"ABCDEFGHJKMNPQRSTUVWXYZ23456789\"  # no 0/O/1/I/L, easy to read aloud"
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 120,
+     "quote": "ref = \"Q\" + \"\".join(secrets.choice(alphabet) for _ in range(5))"
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 121,
+     "quote": "if not conn.execute(\"SELECT 1 FROM questions WHERE ref = ?\", (ref,)).fetchone():"
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 45,
+     "quote": "status TEXT NOT NULL,   -- 'auto_answered' | 'not_sent' | 'waiting' | 'replied'"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 144,
+     "quote": "q = conn.execute(\"SELECT * FROM questions WHERE ref = ?\", (ref.strip().upper(),)).fetchone()"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 127,
+     "quote": "reference_code: Annotated[str, Field(description=\"From ask_landlord\")],"
+    }
+   ]
+  },
+  {
+   "id": "consent-gate",
+   "name": "Consent gate",
+   "svg": "consent-gate.svg",
+   "one_liner": "A question reaches the landlord only after the renter says yes",
+   "explain": "I want a question to reach the landlord only after the renter says yes, and two things carry that rule. First, my server instructions tell the model to call send_question_to_landlord only after a clear yes, and the tool's own description repeats it. Second, the in-chat card has a Send to landlord button, so the renter's own click is the yes. The honest limit is that the tool stays visible to the model, so a text-only host relies on the model obeying my words. Nothing inside send_to_landlord checks for a yes, so the gate is a rule I ask for, not a lock.",
+   "why": "Sending tells a real landlord by email, and nobody can unsend that. The card button makes consent a click the renter did, which is stronger than trusting the model. Where no card appears, only the instructions stand in the way, and I say so plainly.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "INSTRUCTIONS",
+     "detail": "Tells the model to send only after a clear yes and never to resend after a card send."
+    },
+    {
+     "name": "send_question_to_landlord",
+     "detail": "The tool whose description says to call it only after the renter clearly said yes."
+    },
+    {
+     "name": "consentForm",
+     "detail": "The card's form: name, channel, contact and a Send to landlord button that calls the tool."
+    },
+    {
+     "name": "tool registration",
+     "detail": "The tool is registered with no gate, so every host's model can see and call it."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 41,
+     "quote": "after the renter says yes. Never send without a clear yes."
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 134,
+     "quote": "ONLY call this after the renter has clearly said yes to sending it.\"\"\""
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 47,
+     "quote": "answers as LeaseBoston cards. The renter can send a question to the landlord from the"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 48,
+     "quote": "card themselves; you will then see a message saying so. Do not send it again."
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 224,
+     "quote": "const r = await request(\"tools/call\", { name: \"send_question_to_landlord\", arguments: {"
+    },
+    {
+     "file": "leaseapp/ui/app.html",
+     "line": 233,
+     "quote": "} }, \"Send to landlord\");"
+    }
+   ]
+  },
+  {
+   "id": "idempotent-send",
+   "name": "Idempotent send",
+   "svg": "idempotent-send.svg",
+   "one_liner": "Sending twice changes nothing: the second call returns the status",
+   "explain": "I check the contact first, and the rule depends on the channel the renter picked. Email must look like name@host.tld, sms needs at least 10 digits, and app needs a non-empty username or email. If the question is already waiting or replied, I return that status and send nothing, so a repeated call never sends twice. Otherwise I set the status to waiting, email the landlord, and send the renter a confirmation on their channel. For chat_only nothing goes to the renter, because that channel means they will check back in the chat.",
+   "why": "A model can call a tool twice, and both the card and the model may try to send the same question. Returning the stored status turns a repeat into a harmless no-op, so the landlord gets one email per question. The tool is also annotated idempotent, meaning repeating it has no extra effect.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "_check_contact",
+     "detail": "Rejects an unknown channel, a bad email, an sms number under 10 digits, or an empty app contact."
+    },
+    {
+     "name": "status guard",
+     "detail": "Returns the existing status with the note 'Already sent. Nothing sent twice.' for waiting or replied."
+    },
+    {
+     "name": "UPDATE questions",
+     "detail": "Sets status to waiting and stores the renter's name, channel, contact and sent time."
+    },
+    {
+     "name": "notify.send (landlord)",
+     "detail": "Emails the landlord the question and a link to the reply page."
+    },
+    {
+     "name": "notify.send (renter)",
+     "detail": "Sends the renter a confirmation with the reference code on their chosen channel."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/service.py",
+     "line": 91,
+     "quote": "_check_contact(channel, contact)"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 94,
+     "quote": "if q[\"status\"] in (\"waiting\", \"replied\"):"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 95,
+     "quote": "return {\"status\": q[\"status\"], \"reference_code\": q[\"ref\"], \"note\": \"Already sent. Nothing sent twice.\"}"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 98,
+     "quote": "\"UPDATE questions SET status = 'waiting', renter_name = ?, channel = ?, contact = ?, sent_at = ?\""
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 102,
+     "quote": "notify.send(conn, channel=\"email\", recipient=landlord[\"email\"], question_ref=q[\"ref\"],"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 106,
+     "quote": "notify.send(conn, channel=channel, recipient=contact, question_ref=q[\"ref\"],"
+    }
+   ]
+  },
+  {
+   "id": "reply-becomes-answer",
+   "name": "Reply becomes answer",
+   "svg": "reply-becomes-answer.svg",
+   "one_liner": "A landlord reply can be saved so later renters get it instantly",
+   "explain": "When the landlord replies, landlord_reply checks the question is waiting for that landlord, then stores the reply and sets the status to replied. The landlord can also save the reply as a saved answer, for this unit only or for all their units, marked with source from_reply. Then I notify the renter on the channel they chose, and they can also read it in chat with check_landlord_reply. The next renter's ask_landlord reads every saved answer for that landlord, so the saved reply matches instantly with no wait.",
+   "why": "Many renters ask a landlord the same things, so one slow reply can answer them all. Saving it turns that reply into an instant answer, and the landlord's queue shrinks over time. Without the save, each renter would wait for the same reply again.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "landlord_reply",
+     "detail": "Checks the question is waiting for this landlord, stores the reply and sets replied."
+    },
+    {
+     "name": "save_as",
+     "detail": "None, 'listing' for this unit only, or 'all' for every unit the landlord has."
+    },
+    {
+     "name": "_save_answer",
+     "detail": "Inserts a saved_answers row; here the source is from_reply."
+    },
+    {
+     "name": "notify.send (renter)",
+     "detail": "Messages the renter on their own channel; chat_only sends nothing."
+    },
+    {
+     "name": "ask_landlord candidates",
+     "detail": "Reads the landlord's saved answers, including saved replies, to match the next question."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/service.py",
+     "line": 159,
+     "quote": "if q[\"landlord_id\"] != landlord_id or q[\"status\"] != \"waiting\":"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 162,
+     "quote": "conn.execute(\"UPDATE questions SET status = 'replied', reply = ?, replied_at = ? WHERE ref = ?\","
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 164,
+     "quote": "if save_as in (\"listing\", \"all\"):"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 166,
+     "quote": "q[\"question\"], reply, \"from_reply\")"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 167,
+     "quote": "return notify.send(conn, channel=q[\"channel\"], recipient=q[\"contact\"] or \"\", question_ref=q[\"ref\"],"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 51,
+     "quote": "\"SELECT id, question, answer FROM saved_answers WHERE landlord_id = ?\""
+    }
+   ]
+  }
+ ]
+}

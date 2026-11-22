@@ -1,0 +1,310 @@
+{
+ "parent": {
+  "id": "search-ranking",
+  "name": "Search & ranking",
+  "one_liner": "Filters out what cannot work, then scores and ranks the rest.",
+  "explain": "I take the renter's filters and every listing, and first drop the ones that cannot work, such as a rent over budget. Each survivor gets a fit score from 0 to 100, built from budget, commute distance and extras, with a plain reason per part. I sort by score, highest first, break ties with the lower rent, and return up to the limit, which defaults to 5. If fewer places fit than the limit, I also show listings that fail exactly one filter, so the renter knows what to loosen. Every search records an impression, a note that a listing was shown, for each match I return.",
+  "why": "Hard filters keep impossible places away from the renter, and the score puts the best fit first. Plain reasons let the AI explain why a place fits instead of guessing. Near misses stop a strict search from ending in an empty answer.",
+  "basis": "evidence",
+  "owner": "me",
+  "units": [
+   {
+    "name": "rank",
+    "detail": "Splits listings into fits and misses, scores the fits, sorts them and adds near misses."
+   },
+   {
+    "name": "why_not",
+    "detail": "Lists, in words, every hard filter a listing fails; an empty list means it passes."
+   },
+   {
+    "name": "score",
+    "detail": "Combines the budget, commute and extras parts into one 0-100 number with reasons."
+   },
+   {
+    "name": "km_between",
+    "detail": "Straight-line distance in kilometres between two latitude and longitude points."
+   },
+   {
+    "name": "search",
+    "detail": "The service call that loads listings, runs rank and logs an impression per match."
+   }
+  ],
+  "evidence": [
+   {
+    "file": "leaseapp/ranking.py",
+    "line": 3,
+    "quote": "Hard filters remove what cannot work (over budget, too few bedrooms, no pets,"
+   },
+   {
+    "file": "leaseapp/ranking.py",
+    "line": 70,
+    "quote": "def rank(listings: list[dict], f: dict, limit: int) -> dict:"
+   },
+   {
+    "file": "leaseapp/ranking.py",
+    "line": 79,
+    "quote": "fits.sort(key=lambda x: (-x[\"fit_score\"], x[\"rent\"]))"
+   },
+   {
+    "file": "leaseapp/ranking.py",
+    "line": 81,
+    "quote": "if len(fits) < limit:  # say what nearly fit, so the renter can loosen a filter"
+   },
+   {
+    "file": "leaseapp/service.py",
+    "line": 19,
+    "quote": "def search(filters: dict, limit: int = 5) -> dict:"
+   },
+   {
+    "file": "leaseapp/service.py",
+    "line": 24,
+    "quote": "\"INSERT INTO impressions VALUES (?, ?)\", [(m[\"id\"], now()) for m in result[\"matches\"]]"
+   }
+  ]
+ },
+ "children": [
+  {
+   "id": "hard-filters",
+   "name": "Hard filters",
+   "one_liner": "Says in words which must-haves a listing fails.",
+   "explain": "I check each listing against six filters: rent, bedrooms, pets, move-in date, must-have amenities and chosen neighborhoods. Every failed filter becomes a short sentence, such as a dollar amount over budget, or the list of missing amenities. For pets I use a small table, PET_OK, that says which listing policies suit a renter with no pet, a cat or a dog. An empty list means the listing passes, and I only score listings that come back empty.",
+   "why": "Filters that fail in words let me show near misses and tell the renter exactly why a place was dropped. A silent yes or no would hide the one thing worth loosening. A listing that breaks a hard rule must never be scored as a good fit.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "why_not",
+     "detail": "Returns a list of failed-filter sentences; empty means the listing passes."
+    },
+    {
+     "name": "PET_OK",
+     "detail": "Maps the renter's pet (none, cat, dog) to the listing policies that allow it."
+    },
+    {
+     "name": "max_rent check",
+     "detail": "Reports the dollars a listing is over the renter's maximum rent."
+    },
+    {
+     "name": "must_have check",
+     "detail": "Collects the required amenities the listing lacks into one 'missing' sentence."
+    },
+    {
+     "name": "neighborhoods check",
+     "detail": "Rejects a listing outside the chosen areas, ignoring upper or lower case."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 30,
+     "quote": "def why_not(listing: dict, f: dict) -> list[str]:"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 31,
+     "quote": "\"\"\"Hard-filter failures, in words. Empty list = passes.\"\"\""
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 27,
+     "quote": "PET_OK = {\"none\": {\"none\", \"cats\", \"cats_and_dogs\"}, \"cat\": {\"cats\", \"cats_and_dogs\"}, \"dog\": {\"cats_and_dogs\"}}"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 34,
+     "quote": "out.append(f\"${listing['rent'] - f['max_rent']} over budget\")"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 43,
+     "quote": "out.append(\"missing \" + \", \".join(missing))"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 40,
+     "quote": "out.append(f\"not free until {listing['available_from']}\")"
+    }
+   ],
+   "svg": "hard-filters.svg"
+  },
+  {
+   "id": "fit-score",
+   "name": "Fit score",
+   "one_liner": "Averages budget, commute and extras into a 0-100 score.",
+   "explain": "I score a listing with up to three parts, each between 0 and 1: budget fit, commute, and share of nice-to-have extras. Budget and commute each weigh 0.4 and extras weigh 0.2; I average only over the parts the renter actually asked about. The budget part reaches full marks when the rent is 25% under the maximum, and each part writes its own plain reason. I multiply the average by 100 and round it; with no parts at all I return 50 and 'matches your filters'.",
+   "why": "Weights let a close, affordable place beat one that only has a long amenity list. Averaging only the parts that apply keeps a renter who skipped commute from being punished. The plain reasons are what lets the AI say why a place fits.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "score",
+     "detail": "Builds the weighted parts and reasons, then returns a rounded 0-100 number and the list of reasons."
+    },
+    {
+     "name": "budget part",
+     "detail": "Weight 0.4; capped at 1.0 once the rent is 25% under the maximum."
+    },
+    {
+     "name": "commute part",
+     "detail": "Weight 0.4; one minus the kilometres divided by 5, never below 0."
+    },
+    {
+     "name": "extras part",
+     "detail": "Weight 0.2; the share of nice-to-have amenities the listing has."
+    },
+    {
+     "name": "no-parts default",
+     "detail": "Returns 50 when the renter gave nothing to score on."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 7,
+     "quote": "budget   (weight 0.4)  more room under the max rent is better, full marks at 25% under"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 11,
+     "quote": "Each part also writes a plain reason, so the AI can say WHY a place fits."
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 53,
+     "quote": "parts.append((0.4, min(1.0, under / (0.25 * f[\"max_rent\"]))))"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 57,
+     "quote": "parts.append((0.4, max(0.0, 1 - km / 5)))"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 61,
+     "quote": "parts.append((0.2, len(have) / len(f[\"nice_to_have\"])))"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 67,
+     "quote": "return round(100 * sum(w * s for w, s in parts) / total), reasons"
+    }
+   ],
+   "svg": "fit-score.svg"
+  },
+  {
+   "id": "commute-distance",
+   "name": "Commute distance",
+   "one_liner": "Straight-line kilometres to a landmark, turned into a score.",
+   "explain": "I measure the straight-line distance between a listing and a named landmark with the haversine formula, which treats Earth as a sphere. I use an Earth radius of 6371 km and real landmark coordinates that were looked up in Apple Maps. The commute score is 1 minus the distance divided by 5 km, so full marks at 0 km and zero from 5 km on. For the reason I also give walking minutes at 80 metres a minute, and I label it a straight line, not a route.",
+   "why": "A straight line needs no routing service, so the demo works offline and gives the same answer every time. Labelling it a straight line keeps me from promising a walking route I did not compute. Real coordinates keep the distances believable.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "km_between",
+     "detail": "Haversine distance in kilometres between two latitude and longitude points."
+    },
+    {
+     "name": "LANDMARKS",
+     "detail": "Named places such as Northeastern University and MIT, each with real coordinates."
+    },
+    {
+     "name": "WALK_M_PER_MIN",
+     "detail": "80 metres per minute, about 5 km/h, used to turn kilometres into walking minutes."
+    },
+    {
+     "name": "commute part",
+     "detail": "Computes 1 - km / 5, clamped at 0, with weight 0.4 in the fit score."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 18,
+     "quote": "WALK_M_PER_MIN = 80  # about 5 km/h"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 24,
+     "quote": "return 2 * 6371 * math.asin(math.sqrt(h))"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 8,
+     "quote": "commute  (weight 0.4)  straight-line distance to the place they named; full at 0 km, zero at 5 km"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 58,
+     "quote": "reasons.append(f\"{km:.1f} km from {f['near']} (about {round(km * 1000 / WALK_M_PER_MIN)} min walk, straight line)\")"
+    },
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 9,
+     "quote": "# Real coordinates (Apple Maps, 2026-11-21)."
+    },
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 23,
+     "quote": "\"Northeastern University\": (42.3398247, -71.0880961),"
+    }
+   ],
+   "svg": "commute-distance.svg"
+  },
+  {
+   "id": "near-misses",
+   "name": "Near misses",
+   "one_liner": "Shows listings that fail just one filter, with the reason.",
+   "explain": "When fewer listings fit than the limit, I look at the listings that were dropped and keep those that fail exactly one filter. I sort them by fewest failures, then lower rent, and fill only the empty spots up to the limit. Each near miss comes with why_not, the failed filter in words, so the renter learns which single filter to loosen. Separately, search writes an impression row, a record that a listing was shown, for every match I return.",
+   "why": "A strict search that returns nothing leaves the renter stuck. One named filter to loosen is an easy next step. Logging impressions records what was shown, without storing anything about the renter.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "near_misses",
+     "detail": "The result list of near-miss cards, each with a why_not list."
+    },
+    {
+     "name": "one_off",
+     "detail": "Keeps only misses with exactly one failed filter."
+    },
+    {
+     "name": "limit - len(fits)",
+     "detail": "Caps the near misses so matches plus near misses never exceed the limit."
+    },
+    {
+     "name": "impressions insert",
+     "detail": "Search writes one row per match with its id and the time."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 81,
+     "quote": "if len(fits) < limit:  # say what nearly fit, so the renter can loosen a filter"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 83,
+     "quote": "one_off = [(l, fails) for n, l, fails in misses if n == 1]  # fails exactly one filter"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 84,
+     "quote": "result[\"near_misses\"] = [{**_card(l), \"why_not\": fails} for l, fails in one_off[: limit - len(fits)]]"
+    },
+    {
+     "file": "leaseapp/ranking.py",
+     "line": 82,
+     "quote": "misses.sort(key=lambda m: (m[0], m[1][\"rent\"]))"
+    },
+    {
+     "file": "leaseapp/service.py",
+     "line": 24,
+     "quote": "\"INSERT INTO impressions VALUES (?, ?)\", [(m[\"id\"], now()) for m in result[\"matches\"]]"
+    }
+   ],
+   "svg": "near-misses.svg"
+  }
+ ]
+}

@@ -1,0 +1,181 @@
+{
+ "tops": [
+  {
+   "id": "notifications",
+   "name": "Notifications",
+   "one_liner": "Sends a message on the chosen channel and records it",
+   "explain": "I deliver each message on one of four channels: email, sms, app or chat_only. Real email goes out only when the SMTP_HOST setting exists and the address does not end in example.com. Anything else is simulated, meaning I write the message to the outbox table instead of sending it. Every message gets an outbox row marked sent, simulated or failed. If the mail server breaks, I record the failure and the queue keeps working.",
+   "why": "This matters because the demo has to run with no mail server and never email a stranger. Recording every message in one table lets anyone see exactly what would have been sent. Catching send errors stops one broken mail server from blocking every other message.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "CHANNELS",
+     "detail": "The four allowed channels: email, sms, app and chat_only."
+    },
+    {
+     "name": "send",
+     "detail": "Returns the status, and does nothing at all for chat_only, so the renter checks back in the chat."
+    },
+    {
+     "name": "example.com check",
+     "detail": "Skips real sending for addresses on the reserved example.com domain, which cannot receive mail."
+    },
+    {
+     "name": "except Exception",
+     "detail": "Catches any email error and stores it as a failed outbox row with the error text."
+    },
+    {
+     "name": "_smtp",
+     "detail": "Builds the email from the SMTP_* settings and sends it with a 10 second timeout."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/notify.py",
+     "line": 23,
+     "quote": "CHANNELS = (\"email\", \"sms\", \"app\", \"chat_only\")"
+    },
+    {
+     "file": "leaseapp/notify.py",
+     "line": 28,
+     "quote": "if channel == \"chat_only\":"
+    },
+    {
+     "file": "leaseapp/notify.py",
+     "line": 31,
+     "quote": "if channel == \"email\" and os.environ.get(\"SMTP_HOST\") and not recipient.lower().endswith(\"example.com\"):"
+    },
+    {
+     "file": "leaseapp/notify.py",
+     "line": 35,
+     "quote": "except Exception as e:  # keep the queue working even if email is down"
+    },
+    {
+     "file": "leaseapp/notify.py",
+     "line": 38,
+     "quote": "\"INSERT INTO outbox (question_ref, channel, recipient, subject, body, status, detail, created_at)\""
+    }
+   ],
+   "svg": "notifications.svg"
+  },
+  {
+   "id": "data-store",
+   "name": "Data store",
+   "one_liner": "One SQLite file, six tables, shared by two processes",
+   "explain": "I keep everything in one SQLite file, a database in a single disk file, with six tables: landlords, listings, saved_answers, questions, outbox and impressions. Two processes open that file at once: the stdio server and the web server. So I switch on WAL mode, a write-ahead log that lets reads and writes overlap. On first run I create the tables and load the seed data. Reset deletes the file plus its -wal and -shm side files.",
+   "why": "This matters because the chat server and the landlord page run as separate programs and must see the same questions. Without WAL, one process could block the other while it writes. Seeding on first run means the demo works with no setup.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "SCHEMA",
+     "detail": "The CREATE TABLE statements for the six tables, run safely every time with IF NOT EXISTS."
+    },
+    {
+     "name": "connect",
+     "detail": "Opens the file, turns on WAL mode and foreign keys, and waits up to 10 seconds on a lock."
+    },
+    {
+     "name": "init",
+     "detail": "Creates the tables and seeds them only when the landlords table is empty."
+    },
+    {
+     "name": "init(reset=True)",
+     "detail": "Deletes the database file and its -wal and -shm files before starting fresh."
+    },
+    {
+     "name": "_seed",
+     "detail": "Copies the synthetic landlords, listings and saved answers into their tables."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/db.py",
+     "line": 3,
+     "quote": "Both processes (the stdio MCP server Claude Desktop starts, and the web server"
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 61,
+     "quote": "CREATE TABLE IF NOT EXISTS impressions ("
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 80,
+     "quote": "conn.execute(\"PRAGMA journal_mode=WAL\")"
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 88,
+     "quote": "for suffix in (\"\", \"-wal\", \"-shm\"):"
+    },
+    {
+     "file": "leaseapp/db.py",
+     "line": 92,
+     "quote": "if conn.execute(\"SELECT COUNT(*) FROM landlords\").fetchone()[0] == 0:"
+    }
+   ],
+   "svg": "data-store.svg"
+  },
+  {
+   "id": "seed-data",
+   "name": "Seed data",
+   "one_liner": "Made-up Boston landlords, listings and answers for the demo",
+   "explain": "I ship a synthetic Boston dataset: 6 landlords, 20 listings and 23 saved answers. Every name, price and answer is made up. The neighbourhood and landmark coordinates are real, looked up in Apple Maps on 2026-11-21. Some landlords deliberately have no saved answer on topics like guarantors, sublets or tours, so the send-to-landlord path shows up in the demo. All landlord emails use example.com, a reserved domain that cannot receive mail.",
+   "why": "This matters because a demo needs realistic maps and distances without using any real person's data. The deliberate gaps force the demo to show the second path, where a question goes to the landlord. The example.com addresses guarantee no real inbox is ever emailed.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "NEIGHBORHOODS",
+     "detail": "Nine neighbourhood centres with real latitude and longitude."
+    },
+    {
+     "name": "LANDMARKS",
+     "detail": "Seven real landmarks, such as Northeastern University and MIT, used for distance questions."
+    },
+    {
+     "name": "LANDLORDS",
+     "detail": "Six made-up landlords, each with an example.com email address."
+    },
+    {
+     "name": "_at",
+     "detail": "Places a listing a few hundred metres from its neighbourhood centre."
+    },
+    {
+     "name": "SAVED_ANSWERS",
+     "detail": "The 23 premade answers, each tied to one landlord and sometimes to one listing."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 1,
+     "quote": "\"\"\"SYNTHETIC demo data. Every landlord, listing, price and answer here is made up."
+    },
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 9,
+     "quote": "# Real coordinates (Apple Maps, 2026-11-21)."
+    },
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 5,
+     "quote": "Emails use example.com, a domain reserved for examples, so they can never be"
+    },
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 151,
+     "quote": "# Gaps are deliberate: some landlords have no answer about guarantors, sublets or"
+    },
+    {
+     "file": "leaseapp/seed_data.py",
+     "line": 152,
+     "quote": "# tours, so the demo shows the \"send it to the landlord\" path."
+    }
+   ],
+   "svg": "seed-data.svg"
+  }
+ ]
+}

@@ -1,0 +1,323 @@
+{
+ "parent": {
+  "id": "mcp-server",
+  "name": "MCP server",
+  "one_liner": "The single door Claude and ChatGPT use to reach LeaseBoston",
+  "explain": "I am the one MCP server, named leaseboston, that Claude or ChatGPT talks to. MCP, the Model Context Protocol, is a standard way for a chat app to call tools. I offer five tools: search_apartments, get_apartment, ask_landlord, send_question_to_landlord and check_landlord_reply. I run over stdin/stdout for Claude Desktop and Claude Code, or over HTTP at /mcp for ChatGPT. I also give the model a short instruction text that tells it how to behave.",
+  "why": "Every chat app sees only what I declare, so my tool types and instruction text decide whether the model behaves safely. Without my host check and transport choices, ChatGPT could not reach a laptop through a tunnel. Without the instructions, the model might guess a landlord's policy.",
+  "basis": "inferred",
+  "owner": "me",
+  "units": [
+   {
+    "name": "mcp",
+    "detail": "The MCPServer object named leaseboston that holds the tools, the instructions and the card extension."
+   },
+   {
+    "name": "INSTRUCTIONS",
+    "detail": "The text the model reads about how to use the tools."
+   },
+   {
+    "name": "python -m leaseapp stdio | serve",
+    "detail": "The two ways to start the server, one per kind of chat app."
+   },
+   {
+    "name": "TransportSecuritySettings",
+    "detail": "The allow-list of host names and origins the HTTP server accepts."
+   },
+   {
+    "name": "apps = Apps()",
+    "detail": "The extension that ties two tools to the in-chat card."
+   }
+  ],
+  "evidence": [
+   {
+    "file": "leaseapp/mcp_server.py",
+    "line": 1,
+    "quote": "\"\"\"LeaseBoston's MCP server: what Claude or ChatGPT sees."
+   },
+   {
+    "file": "leaseapp/mcp_server.py",
+    "line": 111,
+    "quote": "mcp = MCPServer(\"leaseboston\", title=\"LeaseBoston apartment search\", version=\"0.1.0\", instructions=INSTRUCTIONS,"
+   },
+   {
+    "file": "leaseapp/mcp_server.py",
+    "line": 25,
+    "quote": "INSTRUCTIONS = \"\"\"\\"
+   },
+   {
+    "file": "leaseapp/mcp_server.py",
+    "line": 55,
+    "quote": "apps = Apps()"
+   },
+   {
+    "file": "leaseapp/__main__.py",
+    "line": 24,
+    "quote": "mcp.run()"
+   },
+   {
+    "file": "leaseapp/__main__.py",
+    "line": 39,
+    "quote": "mcp.run(transport=\"streamable-http\", host=\"127.0.0.1\", port=a.port, json_response=True,"
+   }
+  ]
+ },
+ "children": [
+  {
+   "id": "transports",
+   "name": "Two transports",
+   "one_liner": "stdio for Claude, plain-JSON HTTP for ChatGPT",
+   "explain": "I can start in two ways. With the stdio command I talk over stdin and stdout, the text pipes of a process, which Claude Desktop and Claude Code use. With the serve command I listen on HTTP at /mcp, port 8000 unless you pick another, which ChatGPT reaches through a tunnel. I pass json_response=True, so each reply is one plain JSON body instead of an SSE stream, a long-lived stream of events. I do this because Cloudflare quick tunnels do not support SSE, and no tool of mine needs streaming.",
+   "why": "Claude and ChatGPT connect in different ways, so one server needs both doors. If I used a streaming reply, ChatGPT calls through the free Cloudflare tunnel would fail. Plain JSON works through the tunnel and costs nothing, because every tool answers in one shot.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "stdio",
+     "detail": "Subcommand that runs the server over stdin and stdout with mcp.run()."
+    },
+    {
+     "name": "serve",
+     "detail": "Subcommand that serves MCP at /mcp plus the landlord pages over HTTP."
+    },
+    {
+     "name": "--port",
+     "detail": "Chooses the HTTP port, default 8000."
+    },
+    {
+     "name": "--public-host",
+     "detail": "Names the tunnel hostname to accept, used for ChatGPT."
+    },
+    {
+     "name": "json_response=True",
+     "detail": "Makes each HTTP reply one plain JSON body instead of an SSE stream."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 14,
+     "quote": "sub.add_parser(\"stdio\", help=\"MCP over stdin/stdout, for Claude Desktop and Claude Code\")"
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 15,
+     "quote": "s = sub.add_parser(\"serve\", help=\"MCP at /mcp plus the landlord page, over HTTP\")"
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 17,
+     "quote": "s.add_argument(\"--public-host\", help=\"Tunnel hostname to accept, e.g. abc.trycloudflare.com (for ChatGPT)\")"
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 24,
+     "quote": "mcp.run()"
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 38,
+     "quote": "# Cloudflare quick tunnels do not support SSE, and no tool here needs streaming."
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 39,
+     "quote": "mcp.run(transport=\"streamable-http\", host=\"127.0.0.1\", port=a.port, json_response=True,"
+    }
+   ],
+   "svg": "transports.svg"
+  },
+  {
+   "id": "host-guard",
+   "name": "Host guard",
+   "one_liner": "Only localhost and the tunnel hostname may reach the server",
+   "explain": "The MCP SDK ships a guard against DNS rebinding, a trick where a web page points its own host name at your laptop. By default the guard answers only localhost, written as 127.0.0.1, localhost and [::1]. When I start with --public-host, I add that tunnel hostname, with and without a port, to allowed_hosts. I also add its https origin to allowed_origins, and --allow-origin can add more. Any other Host header is refused.",
+   "why": "A local server with no host check can be driven by a hostile web page open in the same browser. Opening it to one named tunnel host lets ChatGPT in without opening it to everyone. Without the flag, the tunnel's own host name would be refused.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "security = None",
+     "detail": "Keeps the SDK default, localhost only, when no public host is given."
+    },
+    {
+     "name": "local",
+     "detail": "The three localhost spellings that are always allowed: 127.0.0.1, localhost and [::1]."
+    },
+    {
+     "name": "allowed_hosts",
+     "detail": "Adds the public host, with and without a port, to the allowed host names."
+    },
+    {
+     "name": "allowed_origins",
+     "detail": "Adds the https origin of the public host and any --allow-origin values."
+    },
+    {
+     "name": "transport_security=security",
+     "detail": "Hands the settings to the HTTP server when it starts."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 26,
+     "quote": "security = None  # None = the SDK's default: localhost only"
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 28,
+     "quote": "local = [\"127.0.0.1:*\", \"localhost:*\", \"[::1]:*\"]"
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 29,
+     "quote": "security = TransportSecuritySettings("
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 30,
+     "quote": "allowed_hosts=local + [a.public_host, f\"{a.public_host}:*\"],"
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 31,
+     "quote": "allowed_origins=[\"http://127.0.0.1:*\", \"http://localhost:*\", f\"https://{a.public_host}\","
+    },
+    {
+     "file": "leaseapp/__main__.py",
+     "line": 40,
+     "quote": "transport_security=security)"
+    }
+   ],
+   "svg": "host-guard.svg"
+  },
+  {
+   "id": "server-instructions",
+   "name": "Server instructions",
+   "one_liner": "The short rulebook the model reads when it connects",
+   "explain": "I send the model a block of text called INSTRUCTIONS when it connects. It says to call ask_landlord with one question per call and never guess a landlord's policy. It says to call send_question_to_landlord only after the renter says a clear yes. It says landlords add answers over time, so the model should call ask_landlord again every time. When a card is shown, it keeps its own text short.",
+   "why": "The model follows these lines in every chat, so they are my cheapest safety rail. Without them it could invent a pet or deposit rule, or message a landlord unasked. Without the ask-again rule it would repeat an old not_answered result.",
+   "basis": "inferred",
+   "owner": "me",
+   "units": [
+    {
+     "name": "INSTRUCTIONS",
+     "detail": "The constant that holds the whole rulebook as one string."
+    },
+    {
+     "name": "instructions=INSTRUCTIONS",
+     "detail": "Passes the text to MCPServer so the model receives it on connect."
+    },
+    {
+     "name": "status answered",
+     "detail": "Rule: give the landlord's saved answer word for word."
+    },
+    {
+     "name": "status not_answered",
+     "detail": "Rule: ask the renter first, and send only after a clear yes."
+    },
+    {
+     "name": "card rule",
+     "detail": "Rule: keep chat text short when a card already shows the details."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 25,
+     "quote": "INSTRUCTIONS = \"\"\"\\"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 35,
+     "quote": "with ONE question per call. Never guess a landlord's policy."
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 41,
+     "quote": "after the renter says yes. Never send without a clear yes."
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 43,
+     "quote": "- Landlords add answers over time. Call ask_landlord again every time a question is"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 49,
+     "quote": "Keep your own text short when a card is shown: the card already lists the details."
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 111,
+     "quote": "mcp = MCPServer(\"leaseboston\", title=\"LeaseBoston apartment search\", version=\"0.1.0\", instructions=INSTRUCTIONS,"
+    }
+   ],
+   "svg": "server-instructions.svg"
+  },
+  {
+   "id": "tool-contracts",
+   "name": "Tool contracts",
+   "one_liner": "Typed inputs and outputs the model can read and obey",
+   "explain": "I write each tool's inputs with Python types: Annotated, Field and Literal. The SDK turns them into JSON Schema, a machine-readable list of allowed values, such as min_beds from 0 to 6. Each tool returns dict[str, Any], which gives structured output. I mark search tools read-only and send_question_to_landlord idempotent, meaning a repeat does no extra harm. A fixable UserError becomes a ToolError the model can read, and two tools carry the ui:// card.",
+   "why": "The schema stops the model from sending a bad value, such as an unknown pet type. Readable errors let the model fix its own mistake and retry. The hints let the chat app treat a read-only search without a safety prompt.",
+   "basis": "evidence",
+   "owner": "me",
+   "units": [
+    {
+     "name": "Annotated / Field / Literal",
+     "detail": "Declare the limits and allowed values of each input, such as limit between 1 and 10."
+    },
+    {
+     "name": "dict[str, Any]",
+     "detail": "The return type that gives the model structured output."
+    },
+    {
+     "name": "READ",
+     "detail": "Annotations marking a tool read-only; send_question_to_landlord sets its own idempotent hint."
+    },
+    {
+     "name": "user_errors",
+     "detail": "Wrapper that turns service.UserError into a ToolError message."
+    },
+    {
+     "name": "apps.tool",
+     "detail": "Decorator that binds search_apartments and ask_landlord to the card at ui://leaseboston/card.html."
+    }
+   ],
+   "evidence": [
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 64,
+     "quote": "READ = ToolAnnotations(read_only_hint=True, open_world_hint=False)"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 68,
+     "quote": "\"\"\"Turn a fixable problem into a message the model can read and act on.\"\"\""
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 74,
+     "quote": "raise ToolError(str(e)) from e"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 78,
+     "quote": "@apps.tool(resource_uri=CARD, title=\"Search apartments\", annotations=READ)"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 90,
+     "quote": "limit: Annotated[int, Field(ge=1, le=10)] = 5,"
+    },
+    {
+     "file": "leaseapp/mcp_server.py",
+     "line": 124,
+     "quote": "idempotent_hint=True, open_world_hint=True))"
+    }
+   ],
+   "svg": "tool-contracts.svg"
+  }
+ ]
+}

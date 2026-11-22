@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="A question waits at a closed gate; the renter's click on the Send to landlord button opens it and the question reaches the landlord">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98;text-anchor:middle}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<rect x="28" y="122" width="62" height="42" rx="4"/><path d="M28,122 L59,146 L90,122"/>
+<rect x="360" y="100" width="92" height="80" rx="8"/>
+<rect x="150" y="30" width="160" height="38" rx="12"/>
+<path d="M95,142 L350,142" stroke-dasharray="2 8" stroke-width="1.5"/>
+<path d="M200,205 L260,205"/>
+<path d="M230,205 L230,105" stroke="#ef4444" stroke-width="4"><animate attributeName="stroke" dur="7s" repeatCount="indefinite" calcMode="discrete" keyTimes="0;0.5;1" values="#ef4444;#8a8f98;#ef4444"/><animateTransform attributeName="transform" type="rotate" dur="7s" repeatCount="indefinite" keyTimes="0;0.45;0.55;0.9;0.96;1" values="0 230 205;0 230 205;75 230 205;75 230 205;0 230 205;0 230 205"/></path>
+<circle cx="230" cy="49" r="8" stroke="#3b82f6" opacity="0"><animate attributeName="r" dur="7s" repeatCount="indefinite" keyTimes="0;0.3;0.45;1" values="8;8;30;30"/><animate attributeName="opacity" dur="7s" repeatCount="indefinite" keyTimes="0;0.3;0.32;0.45;1" values="0;0;1;0;0"/></circle>
+</g>
+<circle r="6" fill="#f97316" stroke="none"><animateMotion dur="7s" repeatCount="indefinite" path="M95,142 L385,142" keyPoints="0;0.4;0.4;1;1" keyTimes="0;0.28;0.5;0.86;1" calcMode="linear"/><animate attributeName="opacity" dur="7s" repeatCount="indefinite" keyTimes="0;0.86;0.9;1" values="1;1;0;0"/></circle>
+<text x="59" y="190">question</text>
+<text x="230" y="55">Send to landlord</text>
+<text x="406" y="146">landlord</text>
+<text x="240" y="262" style="font-size:14px">text-only host: only words guard it</text>
+</svg>

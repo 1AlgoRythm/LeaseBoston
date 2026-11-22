@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="Three score parts with weights 0.4, 0.4 and 0.2 fill up to different heights; their weighted average is the 0 to 100 fit score">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<path d="M60,90 L60,230 L380,230 M188,90 L188,230 M316,90 L316,230 M380,90 L380,230 M60,90 L380,90" stroke-width="2"/>
+</g>
+<rect x="63" y="230" width="122" height="0" fill="#f97316" fill-opacity=".7" stroke="none"><animate attributeName="height" dur="8s" repeatCount="indefinite" keyTimes="0;0.5;0.9;1" values="0;139;139;0"/><animate attributeName="y" dur="8s" repeatCount="indefinite" keyTimes="0;0.5;0.9;1" values="230;91;91;230"/></rect>
+<rect x="191" y="230" width="122" height="0" fill="#f97316" fill-opacity=".7" stroke="none"><animate attributeName="height" dur="8s" repeatCount="indefinite" keyTimes="0;0.5;0.9;1" values="0;109.6;109.6;0"/><animate attributeName="y" dur="8s" repeatCount="indefinite" keyTimes="0;0.5;0.9;1" values="230;120.4;120.4;230"/></rect>
+<rect x="319" y="230" width="58" height="0" fill="#f97316" fill-opacity=".7" stroke="none"><animate attributeName="height" dur="8s" repeatCount="indefinite" keyTimes="0;0.5;0.9;1" values="0;69;69;0"/><animate attributeName="y" dur="8s" repeatCount="indefinite" keyTimes="0;0.5;0.9;1" values="230;161;161;230"/></rect>
+<text x="124" y="256" text-anchor="middle">budget 0.4</text><text x="252" y="256" text-anchor="middle">commute 0.4</text><text x="348" y="256" text-anchor="middle">extras 0.2</text>
+<text x="220" y="62" text-anchor="middle" style="fill:#3b82f6;font-size:18px" opacity="0">score 82 of 100<animate attributeName="opacity" dur="8s" repeatCount="indefinite" keyTimes="0;0.5;0.55;0.9;0.95;1" values="0;0;1;1;0;0"/></text></svg>

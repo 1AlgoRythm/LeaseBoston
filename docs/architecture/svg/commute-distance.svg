@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" width="480" height="300" role="img" aria-label="A straight line from a listing to Northeastern is 1.05 km, about 13 minutes on foot, which scores 0.79 on a scale that hits zero at 5 km">
+<defs><filter id="wobble" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<style>text{font-family:"Comic Sans MS","Marker Felt",cursive;font-size:15px;fill:#8a8f98}</style>
+<g filter="url(#wobble)" fill="none" stroke="#8a8f98" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<path d="M70,100 L70,82 L90,66 L110,82 L110,100 Z"/>
+<path d="M90,92 L388,148" stroke-dasharray="5 7" stroke-width="2"/>
+<circle cx="390" cy="150" r="10" stroke="#3b82f6"/>
+<path d="M60,255 L420,255" stroke-width="3"/><path d="M60,245 L60,265 M420,245 L420,265" stroke-width="2"/>
+</g>
+<circle r="6" fill="#f97316" stroke="none"><animateMotion dur="7s" repeatCount="indefinite" path="M90,92 L388,148" keyPoints="0;1;1;0" keyTimes="0;0.55;0.95;1" calcMode="linear"/></circle>
+<circle cx="136" cy="255" r="7" fill="#3b82f6" stroke="none" opacity="0"><animate attributeName="opacity" dur="7s" repeatCount="indefinite" keyTimes="0;0.55;0.56;0.95;0.96;1" values="0;0;1;1;0;0"/></circle>
+<text x="136" y="234" text-anchor="middle" style="fill:#3b82f6" opacity="0">0.79<animate attributeName="opacity" dur="7s" repeatCount="indefinite" keyTimes="0;0.55;0.56;0.95;0.96;1" values="0;0;1;1;0;0"/></text>
+<text x="420" y="240" text-anchor="end">5 km = 0</text>
+<text x="150" y="172">13 min, straight line</text>
+<text x="390" y="184" text-anchor="middle">Northeastern</text></svg>
