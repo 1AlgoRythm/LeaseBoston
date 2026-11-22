@@ -1,7 +1,7 @@
-"""Snugd's MCP server: what Claude or ChatGPT sees.
+"""LeaseBoston's MCP server: what Claude or ChatGPT sees.
 
-Two layers, the same split Within uses:
-  * Snugd's own tools (the shelves): search_apartments, get_apartment.
+Two layers:
+  * The search tools (the shelves): search_apartments, get_apartment.
   * The landlord layer (the counter): ask_landlord returns the landlord's saved
     answer, or, if there is none, lets the renter send the question to the
     landlord's queue (send_question_to_landlord) and check back later
@@ -23,7 +23,7 @@ from . import service
 from .seed_data import LANDMARKS, NEIGHBORHOODS
 
 INSTRUCTIONS = """\
-Snugd helps renters find apartments (Boston area, synthetic demo data).
+LeaseBoston helps renters find apartments in Boston (synthetic demo data).
 
 Finding a place: call search_apartments with what the renter told you. Show the
 results with their why_it_fits reasons and the listing ids. If there are
@@ -37,14 +37,14 @@ with ONE question per call. Never guess a landlord's policy.
   landlord's own saved answer.
 - status "not_answered": say the landlord hasn't answered this yet. Ask whether
   to send it to the landlord, the renter's name, and how they want the reply
-  (email, sms, snugd_app, or chat_only). Call send_question_to_landlord only
+  (email, sms, app, or chat_only). Call send_question_to_landlord only
   after the renter says yes. Never send without a clear yes.
 - Later, check_landlord_reply with the reference code shows the landlord's reply.
 - Landlords add answers over time. Call ask_landlord again every time a question is
   asked, even if the same question got "not_answered" earlier in this chat.
 
 In-chat cards: hosts that support MCP Apps show search results and landlord
-answers as Snugd cards. The renter can send a question to the landlord from the
+answers as LeaseBoston cards. The renter can send a question to the landlord from the
 card themselves; you will then see a message saying so. Do not send it again.
 Keep your own text short when a card is shown: the card already lists the details.
 """
@@ -53,9 +53,9 @@ Keep your own text short when a card is shown: the card already lists the detail
 # hosts ignore it and get the same data as text. The SDK reads these tools when
 # MCPServer is created, so they are defined before `mcp` below.
 apps = Apps()
-CARD = "ui://snugd/card.html"
+CARD = "ui://leaseboston/card.html"
 apps.add_html_resource(CARD, (Path(__file__).parent / "ui" / "app.html").read_text(),
-                       title="Snugd card", prefers_border=False)
+                       title="LeaseBoston card", prefers_border=False)
 
 Amenity = Literal["in_unit_laundry", "laundry_in_building", "dishwasher", "central_ac", "parking",
                   "gym", "elevator", "outdoor_space", "doorman"]
@@ -108,7 +108,7 @@ def ask_landlord(
     return service.ask_landlord(listing_id, question)
 
 
-mcp = MCPServer("snugd", title="Snugd apartment search", version="0.1.0", instructions=INSTRUCTIONS,
+mcp = MCPServer("leaseboston", title="LeaseBoston apartment search", version="0.1.0", instructions=INSTRUCTIONS,
                 extensions=[apps])
 
 
@@ -126,9 +126,9 @@ def get_apartment(listing_id: Annotated[str, Field(description="Listing id, e.g.
 def send_question_to_landlord(
     reference_code: Annotated[str, Field(description="From ask_landlord")],
     renter_name: Annotated[str, Field(min_length=1, max_length=100)],
-    channel: Annotated[Literal["email", "sms", "snugd_app", "chat_only"],
+    channel: Annotated[Literal["email", "sms", "app", "chat_only"],
                        Field(description="How the renter wants the reply")],
-    contact: Annotated[str | None, Field(description="Email, phone or Snugd username. Not needed for chat_only")] = None,
+    contact: Annotated[str | None, Field(description="Email, phone or LeaseBoston username. Not needed for chat_only")] = None,
 ) -> dict[str, Any]:
     """Put the renter's question in the landlord's queue and notify the landlord.
     ONLY call this after the renter has clearly said yes to sending it."""

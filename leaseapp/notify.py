@@ -3,7 +3,7 @@
 Channels:
   email      real email if SMTP_* settings are present, otherwise simulated
   sms        simulated (plug a provider in here)
-  snugd_app  simulated push notification (plug the app's push service in here)
+  app  simulated push notification (plug the app's push service in here)
   chat_only  nothing is sent; the renter checks back in the chat
 
 Simulated means the message is written to the outbox table and shown at
@@ -20,7 +20,7 @@ from email.message import EmailMessage
 
 from .db import now
 
-CHANNELS = ("email", "sms", "snugd_app", "chat_only")
+CHANNELS = ("email", "sms", "app", "chat_only")
 
 
 def send(conn, *, channel: str, recipient: str, subject: str, body: str, question_ref: str | None) -> str:
@@ -44,7 +44,7 @@ def send(conn, *, channel: str, recipient: str, subject: str, body: str, questio
 
 def _smtp(to: str, subject: str, body: str) -> None:
     msg = EmailMessage()
-    msg["From"] = os.environ.get("SMTP_FROM", os.environ.get("SMTP_USER", "snugd-demo@localhost"))
+    msg["From"] = os.environ.get("SMTP_FROM", os.environ.get("SMTP_USER", "leaseboston-demo@localhost"))
     msg["To"], msg["Subject"] = to, subject
     msg.set_content(body)
     with smtplib.SMTP(os.environ["SMTP_HOST"], int(os.environ.get("SMTP_PORT", "587")), timeout=10) as s:

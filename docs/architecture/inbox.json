@@ -1,0 +1,123 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "Landlord inbox: where renter questions arrive",
+  "output": "inbox.html",
+  "quality_profile": "showcase",
+  "locale": "en"
+ },
+ "components": [
+  {
+   "id": "landlord",
+   "type": "external",
+   "label": "Landlord",
+   "sublabel": "browser",
+   "pos": [
+    40,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "localhost-only",
+   "type": "security",
+   "label": "Localhost only",
+   "sublabel": "403 elsewhere",
+   "pos": [
+    320,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "inbox-states",
+   "type": "frontend",
+   "label": "Inbox by status",
+   "sublabel": "4 states \u00b7 reply box",
+   "pos": [
+    600,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "saved-answers",
+   "type": "frontend",
+   "label": "Saved answers",
+   "sublabel": "reused instantly",
+   "pos": [
+    880,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "inbox-stats",
+   "type": "frontend",
+   "label": "Stat tiles",
+   "sublabel": "waiting \u00b7 views",
+   "pos": [
+    600,
+    40
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "db",
+   "type": "external",
+   "label": "SQLite store",
+   "sublabel": "questions \u00b7 impressions",
+   "pos": [
+    880,
+    40
+   ],
+   "size": [
+    180,
+    64
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "landlord-localhost-only",
+   "from": "landlord",
+   "to": "localhost-only",
+   "label": "GET /landlord",
+   "variant": "emphasis"
+  },
+  {
+   "id": "localhost-only-inbox-states",
+   "from": "localhost-only",
+   "to": "inbox-states",
+   "label": "allowed"
+  },
+  {
+   "id": "inbox-states-saved-answers",
+   "from": "inbox-states",
+   "to": "saved-answers",
+   "label": "save as answer"
+  },
+  {
+   "id": "db-inbox-stats",
+   "from": "db",
+   "to": "inbox-stats",
+   "label": "counts"
+  }
+ ]
+}

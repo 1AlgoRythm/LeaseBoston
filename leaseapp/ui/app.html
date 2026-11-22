@@ -1,10 +1,10 @@
 <!doctype html>
 <!--
-  Snugd's in-chat card (an MCP App). Claude Desktop draws this page in a sandboxed
+  LeaseBoston's in-chat card (an MCP App). Claude Desktop draws this page in a sandboxed
   iframe under the tool call and talks to it with JSON-RPC over postMessage
   (ext-apps spec 2026-01-26). No external scripts or fonts: the default CSP blocks them.
 
-  Style: Snugd's own tokens, measured from snugd.ai on 2026-11-22
+  Style: LeaseBoston's tokens
   (green #2D6A4F, dark green #1B4332, page #FAFAF8, text #1A1A1A, grey #6B7280,
   card border #E8E5E0, card radius 16px, button radius 12px, font DM Sans).
 
@@ -116,7 +116,7 @@ window.addEventListener("message", (e) => {
 new ResizeObserver(() => notify("ui/notifications/size-changed",
   { width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight })).observe(document.body);
 
-request("ui/initialize", { appInfo: { name: "snugd-card", version: "0.2.0" }, appCapabilities: {},
+request("ui/initialize", { appInfo: { name: "leaseboston-card", version: "0.2.0" }, appCapabilities: {},
                            protocolVersion: "2026-01-26" })
   .then(() => notify("ui/notifications/initialized", {}));
 
@@ -133,7 +133,7 @@ const money = (n) => "$" + Number(n).toLocaleString("en-US");
 const nice = (s) => String(s).replace(/_/g, " ");
 const PETS = { none: "no pets", cats: "cats OK", cats_and_dogs: "cats & dogs OK" };
 const root = document.getElementById("root");
-const brand = (sub) => h("div", { class: "brand" }, h("span", { class: "heart" }, "♥"), h("b", {}, "snugd"),
+const brand = (sub) => h("div", { class: "brand" }, h("span", { class: "heart" }, "♥"), h("b", {}, "LeaseBoston"),
                          h("span", { class: "sub" }, sub));
 
 function render(result) {
@@ -209,12 +209,12 @@ function consentToggle(ref) {
 
 function consentForm(ref) {
   const name = h("input", { placeholder: "Your name" });
-  const channel = h("select", {}, [["email", "Email me"], ["sms", "Text me"], ["snugd_app", "Snugd app notification"],
+  const channel = h("select", {}, [["email", "Email me"], ["sms", "Text me"], ["app", "LeaseBoston app notification"],
     ["chat_only", "I'll check back in this chat"]].map(([v, t]) => h("option", { value: v }, t)));
   const contact = h("input", { placeholder: "Email address", class: "full" });
   channel.addEventListener("change", () => {
     contact.style.display = channel.value === "chat_only" ? "none" : "block";
-    contact.placeholder = { email: "Email address", sms: "Phone number", snugd_app: "Snugd username or email" }[channel.value] || "";
+    contact.placeholder = { email: "Email address", sms: "Phone number", app: "LeaseBoston username or email" }[channel.value] || "";
   });
   const status = h("div", { class: "muted full" });
   const send = h("button", { class: "full", onclick: async () => {

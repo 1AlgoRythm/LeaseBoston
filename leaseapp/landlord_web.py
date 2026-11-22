@@ -4,7 +4,7 @@ Plain HTML pages added to the same web app that serves /mcp. They answer only
 on localhost, so a public tunnel for ChatGPT exposes /mcp but never this page
 (it shows renters' contact details and has no login yet).
 
-Style: Snugd's own tokens, measured from snugd.ai on 2026-11-22.
+Style: LeaseBoston's tokens (green #2D6A4F, page #FAFAF8, card border #E8E5E0).
 """
 
 from datetime import datetime, timezone
@@ -90,7 +90,7 @@ def page(title: str, body: str, landlord=None, tab: str = "") -> HTMLResponse:
                f"<a href='/landlord'>Switch landlord</a></nav>")
     who = f"<small> for landlords{' · ' + e(landlord['company']) if landlord is not None else ''}</small>"
     return HTMLResponse(f"<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'>"
-                        f"<title>{e(title)}</title>{STYLE}<header><span class=logo><span class=heart>♥</span>snugd{who}</span>"
+                        f"<title>{e(title)}</title>{STYLE}<header><span class=logo><span class=heart>♥</span>LeaseBoston{who}</span>"
                         f"{nav}</header><main>{body}<p class=muted style='margin-top:16px'>Demo data: every landlord, "
                         f"listing and renter here is synthetic.</p></main>")
 

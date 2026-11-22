@@ -14,7 +14,7 @@ class UserError(ValueError):
     """A problem the renter or the AI can fix (bad id, bad contact). Shown to the model."""
 
 
-# ---------- renter side: Snugd's own feature ----------
+# ---------- renter side: search ----------
 
 def search(filters: dict, limit: int = 5) -> dict:
     with connect() as conn:
@@ -40,7 +40,7 @@ def get_listing(listing_id: str) -> dict:
     return d
 
 
-# ---------- renter side: the Within-style layer ----------
+# ---------- renter side: the landlord layer ----------
 
 def ask_landlord(listing_id: str, question: str) -> dict:
     listing = get_listing(listing_id)
@@ -77,7 +77,7 @@ def ask_landlord(listing_id: str, question: str) -> dict:
         "reference_code": ref,
         "landlord": listing["landlord"],
         "next_step": "Tell the renter the landlord has not answered this yet. Do not guess. Ask if they want "
-                     "it sent to the landlord, their name, and how to hear back: email, sms, snugd_app, "
+                     "it sent to the landlord, their name, and how to hear back: email, sms, app, "
                      "or chat_only (check back here). Only after they say yes, call send_question_to_landlord.",
     }
     if best and best.score >= RELATED_FLOOR:
@@ -136,8 +136,8 @@ def _check_contact(channel: str, contact: str) -> None:
         raise UserError("That does not look like an email address.")
     if channel == "sms" and len(re.sub(r"\D", "", contact)) < 10:
         raise UserError("A phone number needs at least 10 digits.")
-    if channel == "snugd_app" and not contact:
-        raise UserError("Give the renter's Snugd account email or username.")
+    if channel == "app" and not contact:
+        raise UserError("Give the renter's LeaseBoston account email or username.")
 
 
 def _question(conn, ref: str):

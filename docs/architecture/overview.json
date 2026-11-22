@@ -1,0 +1,266 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "LeaseBoston: apartment search and landlord answers inside Claude",
+  "output": "index.html",
+  "quality_profile": "showcase",
+  "locale": "en"
+ },
+ "components": [
+  {
+   "id": "renter",
+   "type": "external",
+   "label": "Renter's chat",
+   "sublabel": "Claude \u00b7 ChatGPT",
+   "pos": [
+    40,
+    250
+   ],
+   "size": [
+    170,
+    64
+   ]
+  },
+  {
+   "id": "card",
+   "type": "frontend",
+   "label": "In-chat card",
+   "sublabel": "MCP App \u00b7 app.html",
+   "pos": [
+    320,
+    470
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "mcp",
+   "type": "backend",
+   "label": "MCP server",
+   "sublabel": "5 tools \u00b7 stdio / HTTP",
+   "pos": [
+    320,
+    250
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "lifecycle",
+   "type": "backend",
+   "label": "Question lifecycle",
+   "sublabel": "service.py",
+   "pos": [
+    610,
+    250
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "search",
+   "type": "backend",
+   "label": "Search & ranking",
+   "sublabel": "ranking.py",
+   "pos": [
+    610,
+    60
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "matcher",
+   "type": "backend",
+   "label": "Answer matcher",
+   "sublabel": "matcher.py",
+   "pos": [
+    610,
+    470
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "db",
+   "type": "database",
+   "label": "SQLite store",
+   "sublabel": "db.py \u00b7 6 tables",
+   "pos": [
+    900,
+    250
+   ],
+   "size": [
+    170,
+    64
+   ]
+  },
+  {
+   "id": "seed",
+   "type": "database",
+   "label": "Synthetic Boston data",
+   "sublabel": "seed_data.py",
+   "pos": [
+    900,
+    60
+   ],
+   "size": [
+    170,
+    64
+   ]
+  },
+  {
+   "id": "notify",
+   "type": "backend",
+   "label": "Notifications",
+   "sublabel": "notify.py \u00b7 outbox",
+   "pos": [
+    900,
+    470
+   ],
+   "size": [
+    170,
+    64
+   ]
+  },
+  {
+   "id": "inbox",
+   "type": "frontend",
+   "label": "Landlord inbox",
+   "sublabel": "landlord_web.py",
+   "pos": [
+    1180,
+    250
+   ],
+   "size": [
+    170,
+    64
+   ]
+  },
+  {
+   "id": "tests",
+   "type": "external",
+   "label": "29 tests",
+   "sublabel": "tests/test_mvp.py",
+   "pos": [
+    320,
+    60
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "demo",
+   "type": "external",
+   "label": "Demo recorder",
+   "sublabel": "agent-desktop \u00b7 ffmpeg",
+   "pos": [
+    40,
+    470
+   ],
+   "size": [
+    170,
+    64
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "renter-mcp",
+   "from": "renter",
+   "to": "mcp",
+   "label": "tool calls",
+   "variant": "emphasis"
+  },
+  {
+   "id": "mcp-card",
+   "from": "mcp",
+   "to": "card",
+   "label": "card + results",
+   "labelAt": [
+    410,
+    392
+   ]
+  },
+  {
+   "id": "mcp-lifecycle",
+   "from": "mcp",
+   "to": "lifecycle",
+   "label": "service calls",
+   "variant": "emphasis"
+  },
+  {
+   "id": "lifecycle-search",
+   "from": "lifecycle",
+   "to": "search",
+   "label": "filters"
+  },
+  {
+   "id": "lifecycle-matcher",
+   "from": "lifecycle",
+   "to": "matcher",
+   "label": "question",
+   "labelAt": [
+    700,
+    392
+   ]
+  },
+  {
+   "id": "lifecycle-db",
+   "from": "lifecycle",
+   "to": "db",
+   "label": "rows"
+  },
+  {
+   "id": "seed-db",
+   "from": "seed",
+   "to": "db",
+   "label": "first run",
+   "labelAt": [
+    985,
+    187
+   ]
+  },
+  {
+   "id": "db-inbox",
+   "from": "db",
+   "to": "inbox",
+   "label": "queue"
+  },
+  {
+   "id": "lifecycle-notify",
+   "from": "lifecycle",
+   "to": "notify",
+   "label": "notify"
+  },
+  {
+   "id": "tests-mcp",
+   "from": "tests",
+   "to": "mcp",
+   "label": "stdio + HTTP",
+   "labelAt": [
+    410,
+    187
+   ]
+  },
+  {
+   "id": "demo-renter",
+   "from": "demo",
+   "to": "renter",
+   "label": "drives Claude Desktop"
+  }
+ ]
+}

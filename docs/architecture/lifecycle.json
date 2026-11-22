@@ -1,0 +1,153 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "Question lifecycle: from a renter's question to a saved answer",
+  "output": "lifecycle.html",
+  "quality_profile": "showcase",
+  "locale": "en"
+ },
+ "components": [
+  {
+   "id": "ask",
+   "type": "external",
+   "label": "ask_landlord",
+   "sublabel": "renter's question",
+   "pos": [
+    40,
+    80
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "reference-code",
+   "type": "backend",
+   "label": "Reference code",
+   "sublabel": "Q + 5 letters",
+   "pos": [
+    320,
+    80
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "consent-gate",
+   "type": "security",
+   "label": "Consent gate",
+   "sublabel": "the renter's yes",
+   "pos": [
+    600,
+    80
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "idempotent-send",
+   "type": "backend",
+   "label": "Send once",
+   "sublabel": "status: waiting",
+   "pos": [
+    880,
+    80
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "inbox",
+   "type": "external",
+   "label": "Landlord inbox",
+   "sublabel": "reply box",
+   "pos": [
+    880,
+    320
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "reply-becomes-answer",
+   "type": "backend",
+   "label": "Reply \u2192 saved answer",
+   "sublabel": "landlord_reply",
+   "pos": [
+    600,
+    320
+   ],
+   "size": [
+    190,
+    64
+   ]
+  },
+  {
+   "id": "matcher",
+   "type": "external",
+   "label": "Answer matcher",
+   "sublabel": "next renter",
+   "pos": [
+    320,
+    320
+   ],
+   "size": [
+    180,
+    64
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "ask-reference-code",
+   "from": "ask",
+   "to": "reference-code",
+   "label": "not answered",
+   "variant": "emphasis"
+  },
+  {
+   "id": "reference-code-consent-gate",
+   "from": "reference-code",
+   "to": "consent-gate",
+   "label": "handle"
+  },
+  {
+   "id": "consent-gate-idempotent-send",
+   "from": "consent-gate",
+   "to": "idempotent-send",
+   "label": "yes"
+  },
+  {
+   "id": "idempotent-send-inbox",
+   "from": "idempotent-send",
+   "to": "inbox",
+   "label": "queued",
+   "labelAt": [
+    997.0,
+    232.0
+   ]
+  },
+  {
+   "id": "inbox-reply-becomes-answer",
+   "from": "inbox",
+   "to": "reply-becomes-answer",
+   "label": "reply"
+  },
+  {
+   "id": "reply-becomes-answer-matcher",
+   "from": "reply-becomes-answer",
+   "to": "matcher",
+   "label": "new answer"
+  }
+ ]
+}

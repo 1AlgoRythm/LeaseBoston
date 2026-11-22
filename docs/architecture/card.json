@@ -1,0 +1,149 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "In-chat card: an MCP App inside the conversation",
+  "output": "card.html",
+  "quality_profile": "showcase",
+  "locale": "en"
+ },
+ "components": [
+  {
+   "id": "host",
+   "type": "external",
+   "label": "Claude Desktop",
+   "sublabel": "draws the iframe",
+   "pos": [
+    40,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "card-handshake",
+   "type": "frontend",
+   "label": "Handshake",
+   "sublabel": "ui/initialize",
+   "pos": [
+    320,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "card-carousel",
+   "type": "frontend",
+   "label": "Listing carousel",
+   "sublabel": "tool-result \u2192 tiles",
+   "pos": [
+    600,
+    80
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "card-consent",
+   "type": "frontend",
+   "label": "Consent form",
+   "sublabel": "the renter's click",
+   "pos": [
+    600,
+    360
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "card-message",
+   "type": "frontend",
+   "label": "Ask box",
+   "sublabel": "ui/message",
+   "pos": [
+    880,
+    80
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "chatbox",
+   "type": "external",
+   "label": "Renter's message box",
+   "sublabel": "prefilled, renter sends",
+   "pos": [
+    1160,
+    80
+   ],
+   "size": [
+    190,
+    64
+   ]
+  },
+  {
+   "id": "server",
+   "type": "external",
+   "label": "MCP server",
+   "sublabel": "send_question_to_landlord",
+   "pos": [
+    880,
+    360
+   ],
+   "size": [
+    190,
+    64
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "host-card-handshake",
+   "from": "host",
+   "to": "card-handshake",
+   "label": "postMessage",
+   "variant": "emphasis"
+  },
+  {
+   "id": "card-handshake-card-carousel",
+   "from": "card-handshake",
+   "to": "card-carousel",
+   "label": "search result"
+  },
+  {
+   "id": "card-handshake-card-consent",
+   "from": "card-handshake",
+   "to": "card-consent",
+   "label": "not answered"
+  },
+  {
+   "id": "card-carousel-card-message",
+   "from": "card-carousel",
+   "to": "card-message",
+   "label": "Ask landlord"
+  },
+  {
+   "id": "card-message-chatbox",
+   "from": "card-message",
+   "to": "chatbox",
+   "label": "prefill"
+  },
+  {
+   "id": "card-consent-server",
+   "from": "card-consent",
+   "to": "server",
+   "label": "tools/call"
+  }
+ ]
+}

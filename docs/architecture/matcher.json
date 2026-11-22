@@ -1,0 +1,153 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "Answer matcher: has the landlord already answered this?",
+  "output": "matcher.html",
+  "quality_profile": "showcase",
+  "locale": "en"
+ },
+ "components": [
+  {
+   "id": "question",
+   "type": "external",
+   "label": "Renter's question",
+   "sublabel": "free text",
+   "pos": [
+    40,
+    80
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "keywords-synonyms",
+   "type": "backend",
+   "label": "Keywords + synonyms",
+   "sublabel": "dog \u2192 pet",
+   "pos": [
+    320,
+    80
+   ],
+   "size": [
+    190,
+    64
+   ]
+  },
+  {
+   "id": "idf-weights",
+   "type": "backend",
+   "label": "Rarity weights",
+   "sublabel": "IDF over saved questions",
+   "pos": [
+    610,
+    80
+   ],
+   "size": [
+    190,
+    64
+   ]
+  },
+  {
+   "id": "overlap-coverage",
+   "type": "backend",
+   "label": "Overlap + coverage",
+   "sublabel": "score 0\u20131",
+   "pos": [
+    900,
+    80
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "topic-guard",
+   "type": "security",
+   "label": "Topic-word guard",
+   "sublabel": "no shared topic \u2192 0",
+   "pos": [
+    900,
+    320
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "fail-safe-threshold",
+   "type": "backend",
+   "label": "Cut-off 0.5",
+   "sublabel": "fail safe",
+   "pos": [
+    610,
+    320
+   ],
+   "size": [
+    190,
+    64
+   ]
+  },
+  {
+   "id": "outcome",
+   "type": "external",
+   "label": "Saved answer, or ask",
+   "sublabel": "word for word",
+   "pos": [
+    320,
+    320
+   ],
+   "size": [
+    190,
+    64
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "question-keywords-synonyms",
+   "from": "question",
+   "to": "keywords-synonyms",
+   "label": "ask_landlord",
+   "variant": "emphasis"
+  },
+  {
+   "id": "keywords-synonyms-idf-weights",
+   "from": "keywords-synonyms",
+   "to": "idf-weights",
+   "label": "word sets"
+  },
+  {
+   "id": "idf-weights-overlap-coverage",
+   "from": "idf-weights",
+   "to": "overlap-coverage",
+   "label": "weights"
+  },
+  {
+   "id": "overlap-coverage-topic-guard",
+   "from": "overlap-coverage",
+   "to": "topic-guard",
+   "label": "score",
+   "labelAt": [
+    1013.5,
+    232.0
+   ]
+  },
+  {
+   "id": "topic-guard-fail-safe-threshold",
+   "from": "topic-guard",
+   "to": "fail-safe-threshold",
+   "label": "best match"
+  },
+  {
+   "id": "fail-safe-threshold-outcome",
+   "from": "fail-safe-threshold",
+   "to": "outcome",
+   "label": "decision"
+  }
+ ]
+}

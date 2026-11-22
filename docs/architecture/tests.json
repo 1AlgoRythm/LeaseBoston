@@ -1,0 +1,117 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "Proof: what was tested, and how",
+  "output": "tests.html",
+  "quality_profile": "showcase",
+  "locale": "en"
+ },
+ "components": [
+  {
+   "id": "suite",
+   "type": "external",
+   "label": "uv run pytest",
+   "sublabel": "29 tests",
+   "pos": [
+    40,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "journey-tests",
+   "type": "backend",
+   "label": "Journey tests",
+   "sublabel": "stdio + HTTP",
+   "pos": [
+    320,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "server",
+   "type": "external",
+   "label": "LeaseBoston server",
+   "sublabel": "real processes",
+   "pos": [
+    600,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "mutation-checks",
+   "type": "security",
+   "label": "Mutation checks",
+   "sublabel": "5 guards broken",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "real-claude-runs",
+   "type": "backend",
+   "label": "Real Claude runs",
+   "sublabel": "Haiku \u00b7 Desktop",
+   "pos": [
+    600,
+    40
+   ],
+   "size": [
+    180,
+    64
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "suite-journey-tests",
+   "from": "suite",
+   "to": "journey-tests",
+   "label": "includes",
+   "variant": "emphasis"
+  },
+  {
+   "id": "journey-tests-server",
+   "from": "journey-tests",
+   "to": "server",
+   "label": "MCP client"
+  },
+  {
+   "id": "mutation-checks-suite",
+   "from": "mutation-checks",
+   "to": "suite",
+   "label": "must fail",
+   "labelAt": [
+    167.5,
+    162.0
+   ]
+  },
+  {
+   "id": "real-claude-runs-server",
+   "from": "real-claude-runs",
+   "to": "server",
+   "label": "checked in the DB",
+   "labelAt": [
+    755.5,
+    162.0
+   ]
+  }
+ ]
+}

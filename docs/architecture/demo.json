@@ -1,0 +1,135 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "Demo recorder: how the video was made",
+  "output": "demo.html",
+  "quality_profile": "showcase",
+  "locale": "en"
+ },
+ "components": [
+  {
+   "id": "driver",
+   "type": "backend",
+   "label": "run_demo.py",
+   "sublabel": "7 scenes",
+   "pos": [
+    40,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "accessibility-driver",
+   "type": "backend",
+   "label": "agent-desktop",
+   "sublabel": "accessibility tree",
+   "pos": [
+    320,
+    80
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "headed-input",
+   "type": "security",
+   "label": "Headed input",
+   "sublabel": "real keys \u00b7 hands off",
+   "pos": [
+    320,
+    360
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "apps",
+   "type": "external",
+   "label": "Claude + inbox",
+   "sublabel": "side by side",
+   "pos": [
+    600,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "recording-edit",
+   "type": "backend",
+   "label": "Record + edit",
+   "sublabel": "screencapture \u00b7 ffmpeg",
+   "pos": [
+    880,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "video",
+   "type": "external",
+   "label": "Demo video",
+   "sublabel": "docs/demo.mp4",
+   "pos": [
+    1160,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "driver-accessibility-driver",
+   "from": "driver",
+   "to": "accessibility-driver",
+   "label": "find \u00b7 click"
+  },
+  {
+   "id": "driver-headed-input",
+   "from": "driver",
+   "to": "headed-input",
+   "label": "type"
+  },
+  {
+   "id": "accessibility-driver-apps",
+   "from": "accessibility-driver",
+   "to": "apps",
+   "label": "AXPress"
+  },
+  {
+   "id": "headed-input-apps",
+   "from": "headed-input",
+   "to": "apps",
+   "label": "keystrokes"
+  },
+  {
+   "id": "apps-recording-edit",
+   "from": "apps",
+   "to": "recording-edit",
+   "label": "screen region",
+   "variant": "emphasis"
+  },
+  {
+   "id": "recording-edit-video",
+   "from": "recording-edit",
+   "to": "video",
+   "label": "title cards"
+  }
+ ]
+}

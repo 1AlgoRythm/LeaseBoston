@@ -1,0 +1,137 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "Search & ranking: from filters to a ranked list",
+  "output": "search.html",
+  "quality_profile": "showcase",
+  "locale": "en"
+ },
+ "components": [
+  {
+   "id": "filters",
+   "type": "external",
+   "label": "Renter's filters",
+   "sublabel": "budget \u00b7 beds \u00b7 pets",
+   "pos": [
+    40,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "hard-filters",
+   "type": "backend",
+   "label": "Hard filters",
+   "sublabel": "why_not()",
+   "pos": [
+    320,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "fit-score",
+   "type": "backend",
+   "label": "Fit score 0\u2013100",
+   "sublabel": "budget 0.4 \u00b7 commute 0.4",
+   "pos": [
+    600,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "results",
+   "type": "external",
+   "label": "Ranked results",
+   "sublabel": "best first",
+   "pos": [
+    880,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "commute-distance",
+   "type": "backend",
+   "label": "Commute distance",
+   "sublabel": "haversine \u00b7 walk minutes",
+   "pos": [
+    600,
+    40
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "near-misses",
+   "type": "backend",
+   "label": "Near-misses",
+   "sublabel": "off by one filter",
+   "pos": [
+    320,
+    400
+   ],
+   "size": [
+    180,
+    64
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "filters-hard-filters",
+   "from": "filters",
+   "to": "hard-filters",
+   "label": "search_apartments",
+   "variant": "emphasis"
+  },
+  {
+   "id": "hard-filters-fit-score",
+   "from": "hard-filters",
+   "to": "fit-score",
+   "label": "passes all"
+  },
+  {
+   "id": "fit-score-results",
+   "from": "fit-score",
+   "to": "results",
+   "label": "sorted"
+  },
+  {
+   "id": "commute-distance-fit-score",
+   "from": "commute-distance",
+   "to": "fit-score",
+   "label": "km to campus",
+   "labelAt": [
+    738.0,
+    162.0
+   ]
+  },
+  {
+   "id": "hard-filters-near-misses",
+   "from": "hard-filters",
+   "to": "near-misses",
+   "label": "fails one",
+   "labelAt": [
+    447.5,
+    342.0
+   ]
+  }
+ ]
+}

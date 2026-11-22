@@ -1,0 +1,133 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "MCP server: how a chat app reaches LeaseBoston",
+  "output": "mcp.html",
+  "quality_profile": "showcase",
+  "locale": "en"
+ },
+ "components": [
+  {
+   "id": "host",
+   "type": "external",
+   "label": "Claude / ChatGPT",
+   "sublabel": "MCP host",
+   "pos": [
+    40,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "transports",
+   "type": "backend",
+   "label": "Transports",
+   "sublabel": "stdio \u00b7 HTTP + JSON",
+   "pos": [
+    320,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "host-guard",
+   "type": "security",
+   "label": "Host allowlist",
+   "sublabel": "DNS-rebinding guard",
+   "pos": [
+    600,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "tool-contracts",
+   "type": "backend",
+   "label": "5 typed tools",
+   "sublabel": "Field \u00b7 Literal \u00b7 ToolError",
+   "pos": [
+    880,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "service",
+   "type": "external",
+   "label": "Question lifecycle",
+   "sublabel": "service.py",
+   "pos": [
+    1160,
+    220
+   ],
+   "size": [
+    180,
+    64
+   ]
+  },
+  {
+   "id": "server-instructions",
+   "type": "backend",
+   "label": "Server instructions",
+   "sublabel": "never guess \u00b7 re-ask",
+   "pos": [
+    40,
+    40
+   ],
+   "size": [
+    180,
+    64
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "id": "host-transports",
+   "from": "host",
+   "to": "transports",
+   "label": "JSON-RPC",
+   "variant": "emphasis"
+  },
+  {
+   "id": "transports-host-guard",
+   "from": "transports",
+   "to": "host-guard",
+   "label": "HTTP only"
+  },
+  {
+   "id": "host-guard-tool-contracts",
+   "from": "host-guard",
+   "to": "tool-contracts",
+   "label": "valid calls"
+  },
+  {
+   "id": "tool-contracts-service",
+   "from": "tool-contracts",
+   "to": "service",
+   "label": "plain dicts"
+  },
+  {
+   "id": "server-instructions-host",
+   "from": "server-instructions",
+   "to": "host",
+   "label": "read by the model",
+   "labelAt": [
+    195.5,
+    162.0
+   ]
+  }
+ ]
+}
