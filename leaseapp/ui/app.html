@@ -1,0 +1,239 @@
+<!doctype html>
+<!--
+  Snugd's in-chat card (an MCP App). Claude Desktop draws this page in a sandboxed
+  iframe under the tool call and talks to it with JSON-RPC over postMessage
+  (ext-apps spec 2026-01-26). No external scripts or fonts: the default CSP blocks them.
+
+  Style: Snugd's own tokens, measured from snugd.ai on 2026-11-22
+  (green #2D6A4F, dark green #1B4332, page #FAFAF8, text #1A1A1A, grey #6B7280,
+  card border #E8E5E0, card radius 16px, button radius 12px, font DM Sans).
+
+  One page, two views, picked from the tool result's structuredContent:
+    matches  -> a carousel of listing tiles   (search_apartments)
+    status   -> the landlord's answer, or a consent form   (ask_landlord)
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --green: #2D6A4F; --green-dark: #1B4332; --green-soft: #E7F1EC; --page: #FAFAF8;
+    --ink: #1A1A1A; --grey: #6B7280; --line: #E8E5E0; --amber: #B7791F; --amber-soft: #FBF3E4;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 2px 0 6px; font: 14px/1.45 "DM Sans", system-ui, -apple-system, sans-serif;
+         color: var(--ink); background: transparent; }
+  .brand { display: flex; align-items: center; gap: 8px; margin: 0 2px 10px; color: var(--ink); }
+  .brand b { font-weight: 700; letter-spacing: -.01em; }
+  .brand .heart { color: #E4572E; }
+  .brand .sub { color: var(--grey); font-size: 12.5px; margin-left: auto; }
+  .muted { color: var(--grey); font-size: 12.5px; }
+
+  /* carousel */
+  .panel { background: var(--page); border: 1px solid var(--line); border-radius: 18px; padding: 14px 12px 10px; }
+  .rail { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 10px;
+          scrollbar-width: none; }
+  .rail::-webkit-scrollbar { display: none; }
+  .tile { flex: 0 0 248px; scroll-snap-align: start; background: #fff; border: 1px solid var(--line);
+          border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .tile.miss { background: var(--page); }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .match { font-size: 12px; font-weight: 700; color: var(--green); background: var(--green-soft);
+           padding: 3px 9px; border-radius: 99px; }
+  .miss .match { color: var(--grey); background: #F1F0ED; }
+  .id { font-size: 12px; color: var(--grey); }
+  .price { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+  .price small { font-size: 13px; font-weight: 500; color: var(--grey); }
+  .title { font-weight: 600; line-height: 1.3; }
+  .facts { font-size: 12.5px; color: var(--grey); }
+  .why { list-style: none; margin: 0; padding: 0; font-size: 13px; display: grid; gap: 3px; }
+  .why li { display: flex; gap: 6px; }
+  .why li::before { content: "✓"; color: var(--green); font-weight: 700; flex: none; }
+  .miss .why li::before { content: "✕"; color: var(--amber); }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chips span { font-size: 11.5px; padding: 2px 8px; border-radius: 99px; background: var(--page);
+                border: 1px solid var(--line); color: #374151; }
+  .actions { display: flex; gap: 6px; margin-top: auto; }
+  .nav { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 2px; }
+  .nav button { width: 30px; height: 30px; padding: 0; border-radius: 99px; }
+
+  button { font: inherit; font-weight: 600; font-size: 13px; cursor: pointer; border-radius: 12px; padding: 8px 14px;
+           border: 1px solid var(--green); background: var(--green); color: #fff; }
+  button:hover { background: var(--green-dark); border-color: var(--green-dark); }
+  button.ghost { background: #fff; color: var(--ink); border-color: var(--line); }
+  button.ghost:hover { background: var(--page); }
+  button:disabled { opacity: .55; cursor: default; }
+  .actions button { flex: 1; white-space: nowrap; padding: 8px 10px; }
+  input, select { font: inherit; font-size: 13.5px; width: 100%; padding: 8px 10px; border-radius: 10px;
+                  border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  input:focus, select:focus { outline: 2px solid var(--green-soft); border-color: var(--green); }
+  .ask { display: none; gap: 6px; }
+
+  /* answer card */
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; max-width: 560px; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .04em;
+         text-transform: uppercase; padding: 3px 9px; border-radius: 99px; }
+  .tag.ok { color: var(--green); background: var(--green-soft); }
+  .tag.wait { color: var(--amber); background: var(--amber-soft); }
+  .q { font-size: 15px; font-weight: 600; margin: 10px 0 2px; }
+  blockquote { margin: 12px 0 8px; padding: 12px 14px; border-left: 3px solid var(--green); background: var(--page);
+               border-radius: 0 10px 10px 0; font-size: 14.5px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .full { grid-column: 1 / -1; }
+  .sent { margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: var(--green-soft); color: var(--green-dark); }
+</style>
+</head>
+<body>
+<div id="root" class="muted">Loading…</div>
+<script>
+"use strict";
+// ---------- JSON-RPC over postMessage ----------
+let nextId = 1, toolInput = {};
+const pending = {};
+function request(method, params) {
+  const id = nextId++;
+  window.parent.postMessage({ jsonrpc: "2.0", id, method, params }, "*");
+  return new Promise((resolve, reject) => { pending[id] = { resolve, reject }; });
+}
+function notify(method, params) { window.parent.postMessage({ jsonrpc: "2.0", method, params }, "*"); }
+function say(text) { return request("ui/message", { role: "user", content: [{ type: "text", text }] }); }
+
+window.addEventListener("message", (e) => {
+  const m = e.data;
+  if (!m || m.jsonrpc !== "2.0") return;
+  if (m.id !== undefined && !m.method && pending[m.id]) {           // a reply to our request
+    const p = pending[m.id]; delete pending[m.id];
+    m.error ? p.reject(m.error) : p.resolve(m.result);
+    return;
+  }
+  if (m.method === "ui/notifications/tool-input") toolInput = (m.params && m.params.arguments) || {};
+  else if (m.method === "ui/notifications/tool-result") render(m.params || {});
+  else if (m.id !== undefined && m.method)                          // any host request (teardown, ping)
+    window.parent.postMessage({ jsonrpc: "2.0", id: m.id, result: {} }, "*");
+});
+
+new ResizeObserver(() => notify("ui/notifications/size-changed",
+  { width: document.documentElement.scrollWidth, height: document.documentElement.scrollHeight })).observe(document.body);
+
+request("ui/initialize", { appInfo: { name: "snugd-card", version: "0.2.0" }, appCapabilities: {},
+                           protocolVersion: "2026-01-26" })
+  .then(() => notify("ui/notifications/initialized", {}));
+
+// ---------- tiny DOM helper (textContent only, so data is never parsed as HTML) ----------
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (k.startsWith("on")) el.addEventListener(k.slice(2), v); else el.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) if (k != null) el.append(k instanceof Node ? k : document.createTextNode(String(k)));
+  return el;
+}
+const money = (n) => "$" + Number(n).toLocaleString("en-US");
+const nice = (s) => String(s).replace(/_/g, " ");
+const PETS = { none: "no pets", cats: "cats OK", cats_and_dogs: "cats & dogs OK" };
+const root = document.getElementById("root");
+const brand = (sub) => h("div", { class: "brand" }, h("span", { class: "heart" }, "♥"), h("b", {}, "snugd"),
+                         h("span", { class: "sub" }, sub));
+
+function render(result) {
+  const sc = result.structuredContent;
+  root.className = ""; root.replaceChildren();
+  if (result.isError || !sc) {
+    root.append(h("div", { class: "muted" }, (result.content && result.content[0] && result.content[0].text) || "No data"));
+  } else if (sc.matches) listings(sc);
+  else if (sc.status) answer(sc);
+}
+
+// ---------- view 1: carousel of listing tiles ----------
+function listings(sc) {
+  const n = sc.matches.length, misses = sc.near_misses || [];
+  const rail = h("div", { class: "rail" },
+    sc.matches.map((l) => tile(l, l.why_it_fits, `${l.fit_score}% match`, false)),
+    misses.map((l) => tile(l, l.why_not, "Almost", true)));
+  const count = h("span", { class: "muted" }, `1 / ${n + misses.length}`);
+  rail.addEventListener("scroll", () => {
+    const i = Math.round(rail.scrollLeft / 268) + 1;
+    count.textContent = `${Math.min(i, n + misses.length)} / ${n + misses.length}`;
+  });
+  root.append(h("div", { class: "panel" }, brand(`${sc.total_matching} match${sc.total_matching === 1 ? "" : "es"} · demo data`), rail,
+    h("div", { class: "nav" },
+      h("button", { class: "ghost", "aria-label": "Previous", onclick: () => rail.scrollBy({ left: -268, behavior: "smooth" }) }, "‹"),
+      count,
+      h("button", { class: "ghost", "aria-label": "Next", onclick: () => rail.scrollBy({ left: 268, behavior: "smooth" }) }, "›"))));
+}
+
+function tile(l, reasons, badge, miss) {
+  const q = h("input", { placeholder: "e.g. Is parking included?" });
+  const submit = () => q.value.trim() && say(`Ask the landlord of ${l.id}: ${q.value.trim()}`);
+  q.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
+  const ask = h("div", { class: "ask" }, q, h("button", { onclick: submit }, "Ask"));
+  const actions = h("div", { class: "actions" },
+    h("button", { onclick: () => { actions.style.display = "none"; ask.style.display = "flex"; q.focus(); } }, "Ask landlord"),
+    h("button", { class: "ghost", onclick: () => say(`Tell me more about ${l.id}.`) }, "Details"));
+  return h("div", { class: "tile" + (miss ? " miss" : "") },
+    h("div", { class: "row" }, h("span", { class: "match" }, badge), h("span", { class: "id" }, l.id)),
+    h("div", { class: "price" }, money(l.rent), h("small", {}, " /mo")),
+    h("div", { class: "title" }, l.title),
+    h("div", { class: "facts" }, `${l.neighborhood} · ${l.beds ? l.beds + " bd" : "Studio"} · ${l.baths} ba · ${l.sqft} ft²`),
+    h("ul", { class: "why" }, (reasons || []).slice(0, 2).map((r) => h("li", {}, r.replace(/^[\d.]+ km from (.+) \(about (\d+) min walk, straight line\)$/, "~$2 min walk to $1")))),
+    h("div", { class: "chips" }, [PETS[l.pets] || nice(l.pets), ...l.amenities.slice(0, 2).map(nice)].map((a) => h("span", {}, a))),
+    actions, ask);
+}
+
+// ---------- view 2: the landlord's answer, or the consent form ----------
+function answer(sc) {
+  const listing = toolInput.listing_id || "this listing";
+  const q = toolInput.question ? h("div", { class: "q" }, `“${toolInput.question}”`) : null;
+  if (sc.status === "answered") {
+    root.append(h("div", { class: "card" }, brand(listing),
+      h("span", { class: "tag ok" }, "✓ Answered by the landlord"), q,
+      h("blockquote", {}, sc.answer), h("div", { class: "muted" }, sc.source),
+      consentToggle(sc.reference_code)));
+  } else if (sc.status === "not_answered") {
+    root.append(h("div", { class: "card" }, brand(listing),
+      h("span", { class: "tag wait" }, "Not answered yet"), q,
+      h("div", { style: "margin-top:6px" }, `${sc.landlord} hasn't answered this one yet. Send it to them, and choose how they reach you.`),
+      consentForm(sc.reference_code)));
+  } else {
+    root.append(h("div", { class: "card" }, h("span", { class: "tag" }, sc.status), JSON.stringify(sc)));
+  }
+}
+
+function consentToggle(ref) {
+  const box = h("div", { style: "display:none" }, consentForm(ref));
+  return h("div", { style: "margin-top:10px" },
+    h("button", { class: "ghost", onclick: (e) => { e.target.remove(); box.style.display = "block"; } },
+      "Not quite it? Ask the landlord directly"), box);
+}
+
+function consentForm(ref) {
+  const name = h("input", { placeholder: "Your name" });
+  const channel = h("select", {}, [["email", "Email me"], ["sms", "Text me"], ["snugd_app", "Snugd app notification"],
+    ["chat_only", "I'll check back in this chat"]].map(([v, t]) => h("option", { value: v }, t)));
+  const contact = h("input", { placeholder: "Email address", class: "full" });
+  channel.addEventListener("change", () => {
+    contact.style.display = channel.value === "chat_only" ? "none" : "block";
+    contact.placeholder = { email: "Email address", sms: "Phone number", snugd_app: "Snugd username or email" }[channel.value] || "";
+  });
+  const status = h("div", { class: "muted full" });
+  const send = h("button", { class: "full", onclick: async () => {
+    if (!name.value.trim()) { status.textContent = "Add your name first."; return; }
+    send.disabled = true; send.textContent = "Sending…"; status.textContent = "";
+    try {
+      const r = await request("tools/call", { name: "send_question_to_landlord", arguments: {
+        reference_code: ref, renter_name: name.value.trim(), channel: channel.value,
+        contact: channel.value === "chat_only" ? null : contact.value.trim() } });
+      if (r.isError) throw new Error((r.content && r.content[0] && r.content[0].text) || "Could not send");
+      const sc = r.structuredContent || {};
+      form.replaceChildren(h("div", { class: "sent full" }, h("b", {}, "✓ Sent to the landlord"),
+        h("div", {}, `Reference ${sc.reference_code}. The reply comes ${sc.how_reply_arrives}.`)));
+      say(`I sent my question to the landlord myself from the card (reference ${sc.reference_code}).`);
+    } catch (err) { send.disabled = false; send.textContent = "Send to landlord"; status.textContent = (err && err.message) || "Could not send"; }
+  } }, "Send to landlord");
+  const form = h("div", { class: "grid2" }, name, channel, contact, send, status);
+  return form;
+}
+</script>
+</body>
+</html>
